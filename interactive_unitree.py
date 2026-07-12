@@ -13,7 +13,9 @@ from external_control import UdpExternalControl
 
 _HELP_TEXT = (
     "Controles: espacio pausa/reanuda | W/S avance +/- | A/D giro izq/der | "
-    "G marcha en el sitio | X centrado | R reinicia | I imprime sensores | J/K bajan/suben amplitud | N/M bajan/suben frecuencia"
+    "G marcha en el sitio | X centrado | R reinicia | I imprime sensores | "
+    "J/K bajan/suben amplitud | N/M bajan/suben frecuencia | M modo manual | "
+    "[/] cambia articulacion | +/- ajusta la articulacion seleccionada"
 )
 
 
@@ -28,10 +30,10 @@ class GaitTuning:
     hip_push: float = 0.35
     knee_swing: float = 0.584
     ankle_swing: float = 0.32
-    # Flexion de cadera al marchar en el sitio (levantar la pierna sin avanzar)
-    march_hip: float = 0.17
-    # Intensidad de la marcha en el sitio (mantiene el gesto suave)
-    march_drive: float = 0.302
+    # Flexion de cadera al marchar en el sitio (levantar el muslo hacia adelante y arriba)
+    march_hip: float = -0.4
+    # Intensidad de la marcha en el sitio (controla cuanto se flexiona la rodilla y se agacha)
+    march_drive: float = 0.6
     # Transferencia lateral de peso (clave para que el pie de balanceo despegue sin resbalar)
     weight_shift: float = 0.137
     turn_roll: float = 0.05
@@ -107,6 +109,28 @@ class PassiveUnitreeSimulator:
         self.control_server = control_server
         self.gait = GaitTuning()
         self.paused = False
+        self.raw_mode = False
+        self.manual_mode = False
+        self.manual_step = 0.05
+        self.manual_joint_index = 0
+        self.manual_joint_names = [
+            "left_hip_pitch_joint",
+            "right_hip_pitch_joint",
+            "left_knee_joint",
+            "right_knee_joint",
+            "left_ankle_pitch_joint",
+            "right_ankle_pitch_joint",
+            "left_hip_roll_joint",
+            "right_hip_roll_joint",
+            "left_ankle_roll_joint",
+            "right_ankle_roll_joint",
+            "left_hip_yaw_joint",
+            "right_hip_yaw_joint",
+            "waist_pitch_joint",
+            "waist_yaw_joint",
+            "left_shoulder_pitch_joint",
+            "right_shoulder_pitch_joint",
+        ]
         self.target_advance = 0.0
         self.target_lateral = 0.0
         self.target_turn = 0.0
@@ -141,6 +165,9 @@ class PassiveUnitreeSimulator:
                 "left_shoulder_pitch_joint",
                 "right_shoulder_pitch_joint",
             )
+        }
+        self.manual_offsets = {
+            self._actuators[name]: 0.0 for name in self.manual_joint_names
         }
         self._foot_sites = {
             "left": self._site_id("left_foot"),
@@ -369,6 +396,49 @@ class PassiveUnitreeSimulator:
             f"avance={self.target_advance:+.2f} lado={self.target_lateral:+.2f} giro={self.target_turn:+.2f}"
         )
 
+    def _print_manual_status(self) -> None:
+        joint_name = self.manual_joint_names[self.manual_joint_index]
+        actuator_id = self._actuators[joint_name]
+        self._print_status(
+            f"manual mode={self.manual_mode} articulacion={joint_name} valor={self.manual_offsets[actuator_id]:+.2f}"
+        )
+
+    def _toggle_manual_mode(self) -> None:
+        self.manual_mode = not self.manual_mode
+        self._print_status("modo manual activado" if self.manual_mode else "modo manual desactivado")
+        if self.manual_mode:
+            self._print_manual_status()
+
+    def _toggle_raw_mode(self) -> None:
+        self.raw_mode = not self.raw_mode
+        if self.raw_mode:
+            self._print_status(
+                "modo motor crudo activado: usa el panel del visor (Control) para mover cada actuador"
+            )
+        else:
+            self._print_status("modo motor crudo desactivado")
+
+    def _cycle_manual_joint(self, delta: int) -> None:
+        self.manual_joint_index = (self.manual_joint_index + delta) % len(self.manual_joint_names)
+        self._print_manual_status()
+
+    def _adjust_manual_joint(self, delta: float) -> None:
+        joint_name = self.manual_joint_names[self.manual_joint_index]
+        actuator_id = self._actuators[joint_name]
+        self.manual_offsets[actuator_id] += delta
+        self._print_manual_status()
+
+    def _reset_manual_offsets(self) -> None:
+        for actuator_id in self.manual_offsets:
+            self.manual_offsets[actuator_id] = 0.0
+        self._print_status("offsets manual reiniciados")
+
+    def _apply_manual_targets(self) -> None:
+        ctrl = self._base_ctrl.copy()
+        for actuator_id, offset in self.manual_offsets.items():
+            ctrl[actuator_id] += offset
+        self.data.ctrl[:] = ctrl
+
     def _adjust_advance(self, delta: float) -> None:
         self.target_advance = self._clamp_axis(self.target_advance + delta)
         self._print_drive_status()
@@ -430,6 +500,14 @@ class PassiveUnitreeSimulator:
         if paused is not None and paused != self.paused:
             self.paused = paused
             self._print_status("pausado" if self.paused else "reanudado")
+
+        raw_mode = self._coerce_bool(payload, "raw_mode")
+        if raw_mode is not None and raw_mode != self.raw_mode:
+            self._toggle_raw_mode()
+
+        manual_mode = self._coerce_bool(payload, "manual_mode")
+        if manual_mode is not None and manual_mode != self.manual_mode:
+            self._toggle_manual_mode()
 
         amplitude = self._coerce_float(payload, "amplitude")
         if amplitude is not None:
@@ -505,8 +583,23 @@ class PassiveUnitreeSimulator:
             self.current_lateral = 0.0
             self.current_turn = 0.0
             self._center_drive()
+            self._reset_manual_offsets()
             self.reset()
             self._print_status("simulacion reiniciada")
+        elif key == "m":
+            self._toggle_manual_mode()
+        elif key == "u":
+            self._toggle_raw_mode()
+        elif key == "[":
+            self._cycle_manual_joint(-1)
+        elif key == "]":
+            self._cycle_manual_joint(1)
+        elif key in {"+", "="}:
+            self._adjust_manual_joint(self.manual_step)
+        elif key == "-":
+            self._adjust_manual_joint(-self.manual_step)
+        elif key == "0":
+            self._reset_manual_offsets()
         elif key == "w":
             self._adjust_advance(0.25)
         elif key == "s":
@@ -676,10 +769,10 @@ class PassiveUnitreeSimulator:
         return float(self.data.xpos[self._pelvis_id][2])
 
     def _configure_initial_camera(self, viewer: Any) -> None:
-        torso_pos = self.data.site_xpos[self._torso_site_id]
-        viewer.cam.lookat[0] = float(torso_pos[0])
-        viewer.cam.lookat[1] = float(torso_pos[1])
-        viewer.cam.lookat[2] = float(torso_pos[2]) - 0.02
+        # Camara "tracking": sigue automaticamente a la pelvis cada cuadro,
+        # asi el robot no se sale de cuadro mientras camina.
+        viewer.cam.trackbodyid = self._pelvis_id
+        viewer.cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
         viewer.cam.distance = 3.35
         viewer.cam.elevation = -14
         viewer.cam.azimuth = 145
@@ -700,8 +793,8 @@ class PassiveUnitreeSimulator:
             self.model,
             self.data,
             key_callback=self.on_key if self.control_server is None else None,
-            show_left_ui=False,
-            show_right_ui=False,
+            show_left_ui=True,
+            show_right_ui=True,
         ) as viewer:
             if self.control_server is None:
                 self._print_status(_HELP_TEXT)
@@ -719,18 +812,26 @@ class PassiveUnitreeSimulator:
                 self._poll_external_control()
 
                 if not self.paused:
-                    self._update_drive_state()
-                    if self._drive_active():
-                        self._advance_phase(self.model.opt.timestep)
-                        snapshot = self._read_sensor_snapshot(self.model.opt.timestep)
-                        self._apply_walk_targets(snapshot)
-                        self._apply_drive_assist(snapshot)
-                    else:
-                        self.data.ctrl[:] = self._base_ctrl
-                        self._clear_drive_assist()
+                    if self.raw_mode:
+                        mujoco.mj_step(self.model, self.data)
+                    elif self.manual_mode:
+                        self._apply_manual_targets()
                         self._read_sensor_snapshot(self.model.opt.timestep)
-                    mujoco.mj_step(self.model, self.data)
-                    self._recover_if_fallen()
+                        mujoco.mj_step(self.model, self.data)
+                        self._recover_if_fallen()
+                    else:
+                        self._update_drive_state()
+                        if self._drive_active():
+                            self._advance_phase(self.model.opt.timestep)
+                            snapshot = self._read_sensor_snapshot(self.model.opt.timestep)
+                            self._apply_walk_targets(snapshot)
+                            self._apply_drive_assist(snapshot)
+                        else:
+                            self.data.ctrl[:] = self._base_ctrl
+                            self._clear_drive_assist()
+                            self._read_sensor_snapshot(self.model.opt.timestep)
+                        mujoco.mj_step(self.model, self.data)
+                        self._recover_if_fallen()
 
                 viewer.sync()
 

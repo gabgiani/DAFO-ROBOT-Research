@@ -20,6 +20,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pause", action="store_true", help="Pausa la simulacion.")
     parser.add_argument("--resume", action="store_true", help="Reanuda la simulacion.")
     parser.add_argument(
+        "--raw-mode",
+        action="store_true",
+        help="Activa el modo motor crudo: usa el panel Control del visor para mover cada actuador.",
+    )
+    parser.add_argument(
+        "--no-raw-mode",
+        action="store_true",
+        help="Desactiva el modo motor crudo.",
+    )
+    parser.add_argument(
         "--report-sensors",
         action="store_true",
         help="Pide al viewer que imprima el snapshot actual de sensores.",
@@ -49,6 +59,10 @@ def build_payload(args: argparse.Namespace) -> dict[str, object]:
         payload["paused"] = True
     if args.resume:
         payload["paused"] = False
+    if args.raw_mode:
+        payload["raw_mode"] = True
+    if args.no_raw_mode:
+        payload["raw_mode"] = False
     if args.report_sensors:
         payload["report_sensors"] = True
     return payload
