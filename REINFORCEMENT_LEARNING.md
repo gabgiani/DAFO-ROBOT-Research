@@ -102,6 +102,78 @@ sequenceDiagram
     end
 ```
 
+## Cuántos motores y "sensores" hay realmente
+
+Es fácil perderse con tantos números. Esta tabla es la referencia exacta de este modelo
+(`g1_12dof.xml`, el que usa `simulate_g1_rl.py`):
+
+### Los 12 motores (actuadores)
+
+Son `<motor>` de **torque**, no de posición (a diferencia del modelo con manos que usa
+`interactive_unitree.py`). Eso importa porque el número que ves en el panel no es un
+ángulo objetivo, es la fuerza que se está aplicando ahora mismo:
+
+| # | Nombre | Articulación |
+|---|---|---|
+| 0 | `left_hip_pitch_joint` | cadera izquierda, adelante/atrás |
+| 1 | `left_hip_roll_joint` | cadera izquierda, lado a lado |
+| 2 | `left_hip_yaw_joint` | cadera izquierda, giro |
+| 3 | `left_knee_joint` | rodilla izquierda |
+| 4 | `left_ankle_pitch_joint` | tobillo izquierdo, adelante/atrás |
+| 5 | `left_ankle_roll_joint` | tobillo izquierdo, lado a lado |
+| 6 | `right_hip_pitch_joint` | cadera derecha, adelante/atrás |
+| 7 | `right_hip_roll_joint` | cadera derecha, lado a lado |
+| 8 | `right_hip_yaw_joint` | cadera derecha, giro |
+| 9 | `right_knee_joint` | rodilla derecha |
+| 10 | `right_ankle_pitch_joint` | tobillo derecho, adelante/atrás |
+| 11 | `right_ankle_roll_joint` | tobillo derecho, lado a lado |
+
+No hay motores de brazos/manos en este modelo (ver "Limitaciones" más abajo).
+
+### Los 47 números de la observación ("sensores")
+
+Ojo: **no son sensores físicos de MuJoCo** (no hay ningún `<sensor>` declarado en
+`g1_12dof.xml`). Son 47 números que el script calcula en cada ciclo a partir del estado
+físico (`qpos`/`qvel`) y se los pasa a la red. Así se arman, en orden:
+
+| Rango en `obs[]` | Cantidad | Qué es | De dónde sale |
+|---|---|---|---|
+| `0:3` | 3 | Velocidad angular de la pelvis (giroscopio) | `data.qvel[3:6]` |
+| `3:6` | 3 | Hacia dónde "cae" la gravedad visto desde el robot | calculado desde el cuaternión de orientación (`qpos[3:7]`) |
+| `6:9` | 3 | Comando actual (avance, lateral, giro) ya escalado | tu `cmd` (W/A/S/D o UDP) × `cmd_scale` |
+| `9:21` | 12 | Posición de cada uno de los 12 motores, relativa a la pose neutra | `data.qpos[7:19]` |
+| `21:33` | 12 | Velocidad de cada uno de los 12 motores | `data.qvel[6:18]` |
+| `33:45` | 12 | La acción que la red decidió el ciclo anterior (le da "memoria") | guardado del paso previo |
+| `45:47` | 2 | Fase del ciclo de paso (seno/coseno) | reloj interno, no depende de sensores |
+
+Total: 3+3+3+12+12+12+2 = **47**, que es exactamente `num_obs` en la config.
+
+## Qué significan los paneles "Joint" y "Control" del visor
+
+Si abrís el panel nativo de MuJoCo (los mismos de la captura de este chat), vas a ver dos
+secciones separadas para los mismos 12 nombres, pero **no significan lo mismo**:
+
+- **"Joint"**: es el ángulo real medido de cada articulación, en radianes (por ejemplo
+  `left_knee_joint = 0.493` significa la rodilla izquierda flexionada ~28°). Es de solo
+  lectura, viene de `data.qpos`.
+- **"Control"**: es el **torque** (fuerza de giro, en Newton-metro) que se le está mandando
+  a ese motor *en este instante*, calculado por la fórmula PD:
+
+  ```
+  torque = (posicion_objetivo - posicion_actual) * kp + (velocidad_objetivo - velocidad_actual) * kd
+  ```
+
+  Con `kp` hasta 150 para algunos motores, errores de posición chicos ya dan torques de
+  20-30, como se ve en la captura (`left_hip_pitch_j = 21.8`, `left_hip_roll_j = 20.4`, etc.).
+
+**Diferencia clave con el visor heurístico:** en `interactive_unitree.py` (modelo con
+manos) el panel "Control" mueve motores de **posición**, así que arrastrar un slider ahí
+sí deja al robot en esa pose (por eso existe el `--raw-mode`). Acá, en `simulate_g1_rl.py`,
+el panel "Control" son motores de **torque** recalculados por nuestro propio código 500
+veces por segundo — si arrastrás un slider ahí a mano, el próximo ciclo de física lo va a
+pisar con el valor que calcula la política. Para este modelo, el control real se hace
+siempre a través de `cmd` (W/A/S/D o `send_unitree_command.py`), no tocando el panel.
+
 ## Por qué esto mantiene mejor el equilibrio que las fórmulas a mano
 
 - Las fórmulas a mano (`interactive_unitree.py`) fueron ajustadas para **una situación
