@@ -71,6 +71,20 @@ error hasta que el robot caminara unos pasos sin caerse.
   fuerza vertical proporcional al error de altura. Es, literalmente, una mano invisible
   ayudando al robot — no es cómo se sostiene en pie un robot real.
 
+## Capturas reales
+
+Estas imagenes salen de una corrida headless real (mismo codigo que usa el viewer,
+sin ventana) con `advance=0.5` sostenido y sin ninguna correccion humana en tiempo real:
+
+| Caminando (t=1.00s, altura pelvis 0.782m) | Cayendo (t=1.73s, altura pelvis 0.497m) |
+|---|---|
+| ![Robot caminando con control heuristico](../artifacts/workshop/01_heuristico_caminando.png) | ![Robot cayendo con control heuristico](../artifacts/workshop/01_heuristico_caida.png) |
+
+En menos de 2 segundos sin que nadie ajuste giro o amplitud, el robot pierde el
+equilibrio hacia adelante y cae — la misma fragilidad que describe la sección
+anterior, pero mucho más rápido que lo que tarda un operador reaccionando en el
+teleop real.
+
 ## Qué problemas encontramos
 
 - **El robot se cae con comandos sostenidos.** Con `advance=1.0` durante mucho tiempo,

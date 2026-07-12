@@ -77,6 +77,18 @@ para que `avance/lateral/giro` funcionen igual que en la etapa 1.
   para nada persistente — nuestro propio código recalcula y sobreescribe el torque de cada
   motor en cada paso de física (cada 2ms). El control real siempre es a través de `cmd`.
 
+## Capturas reales
+
+Misma prueba headless, con `cmd=(0.6, 0, 0)` sostenido sin ninguna correccion humana:
+
+| Inicio (t=1.00s) | Despues de caminar (t=7.00s, x=3.77m, altura pelvis 0.769m) |
+|---|---|
+| ![Robot con politica RL al inicio de la caminata](../artifacts/workshop/02_rl_caminando_inicio.png) | ![Robot con politica RL tras avanzar varios metros](../artifacts/workshop/02_rl_caminando_avanzado.png) |
+
+A diferencia de la etapa 1, acá 6 segundos adicionales de avance sostenido no
+provocan ninguna caída: la altura de la pelvis se mantiene prácticamente igual
+(0.769m) mientras el robot avanzó 3.77 metros en línea recta.
+
 ## Qué problemas encontramos
 
 - **Dependencias pesadas que no hacían falta.** El script oficial de Unitree

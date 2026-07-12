@@ -67,6 +67,18 @@ nunca bajó de ~0.77m — no hubo caída.
   el impacto de chocar contra algo sin perder el equilibrio, al menos con objetos livianos
   (0.5 kg) y velocidades moderadas.
 
+## Capturas reales
+
+Misma prueba headless con el escenario `g1_warehouse_scene.xml`, `cmd=(0.6, 0, 0)`:
+
+| Acercándose (t=1.50s, x=0.66m) | Después de pasar las cajas (t=6.00s, x=3.21m, altura pelvis 0.768m) |
+|---|---|
+| ![Robot acercándose a las cajas y el estante](../artifacts/workshop/03_rl_objetos_acercandose.png) | ![Robot de pie después de pasar junto a las cajas](../artifacts/workshop/03_rl_objetos_despues.png) |
+
+El robot llega hasta la caja azul, la desplaza al pasar junto a ella, y sigue de
+pie con la pelvis en la misma altura de siempre (~0.77m) — ninguna caída pese al
+contacto físico no anticipado por el entrenamiento original.
+
 ## Qué problemas encontramos
 
 - **Las mallas (STL) no se encontraban al cargar la escena.** El `meshdir` relativo que
