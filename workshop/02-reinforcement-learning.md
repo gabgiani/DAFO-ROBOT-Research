@@ -1,5 +1,16 @@
 # Etapa 2 — La misma tarea, con una política de Reinforcement Learning
 
+## Objetivo de esta etapa
+
+Repetir exactamente la misma tarea de la etapa 1 — avanzar sin caerse — pero
+reemplazando las fórmulas escritas a mano por una política de Reinforcement Learning
+ya entrenada, y comparar objetivamente (mismos comandos, mismas métricas: altura de la
+pelvis y distancia recorrida) cuánto más estable es una que la otra.
+
+Al terminar esta etapa vas a poder reproducir la misma prueba de avance sostenido que
+en la etapa 1, pero viendo que acá el robot no se cae — y vas a tener los números
+concretos (metros recorridos, altura de la pelvis) para comprobarlo vos mismo.
+
 ## Cómo se ejecuta
 
 Levantar el visor con la política RL ya entrenada (mata cualquier visor anterior,

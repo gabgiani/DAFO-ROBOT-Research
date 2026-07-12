@@ -1,23 +1,65 @@
 # Workshop: de control manual a caminar con Reinforcement Learning
 
-Recorrido práctico, paso a paso, para repetir la misma experiencia que fuimos teniendo
-mientras construíamos este proyecto: primero intentar controlar el robot "a mano" y ver
-que se cae fácil, después probar una política de Reinforcement Learning (RL) ya entrenada
-y ver que se mantiene de pie mucho mejor, y finalmente agregarle objetos al escenario para
-comprobar que sigue sin caerse aunque choque con algo.
+## Objetivo del workshop
 
-Requisito previo: seguir [INSTALL.md](INSTALL.md) para tener el entorno (`.venv`) y
+Lo que buscamos lograr, en una frase: que un robot humanoide bípedo (Unitree G1) se
+**mantenga parado** y, a partir de ahí, **camine hacia adelante sin caerse** — primero
+con un controlador escrito a mano y después con una política de Reinforcement Learning
+(RL) ya entrenada.
+
+Al terminar este workshop, cada participante va a poder:
+
+- Explicar por qué un robot bípedo de pie es inestable y qué hace falta para mantenerlo
+  erguido.
+- Ejecutar un controlador "a mano" (fórmulas fijas por motor) y ver en qué condiciones
+  se cae.
+- Ejecutar una política de RL ya entrenada y comparar, con números reales, cuánto mejor
+  sostiene el equilibrio que el controlador a mano frente a la misma tarea.
+- Agregar objetos al escenario y comprobar si el robot sigue de pie al chocar con algo
+  que el entrenamiento original no anticipó.
+- Repetir, paso a paso, las mismas pruebas que documentamos acá (con sus resultados
+  reales y capturas) para verificar por sí mismos lo que reportamos.
+
+## El problema que resolvemos
+
+Un robot humanoide de pie es una torre alta y angosta apoyada sobre dos pies chicos:
+cualquier pequeño error de ángulo en una pierna, o cualquier empujón, lo puede tirar.
+Mantenerlo de pie — y encima caminando — exige corregir el equilibrio constantemente,
+muchas veces por segundo. Hay dos formas de resolver esto que vamos a comparar en este
+workshop:
+
+1. **A mano**: un humano escribe fórmulas fijas (amplitud de zancada, flexión de
+   rodilla, fuerzas de corrección) y las ajusta por prueba y error. Funciona hasta
+   cierto punto, pero es frágil.
+2. **Con una política aprendida (RL)**: una red neuronal aprendió sola, en simulación y
+   por prueba y error, qué torque mandarle a cada motor para no caerse, sin que un
+   humano escriba las fórmulas a mano.
+
+El detalle de qué es Reinforcement Learning y cómo funciona la política ya entrenada
+está en [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md); en este workshop nos
+enfocamos en la experiencia práctica de correr y comparar ambos enfoques.
+
+## Requisito previo
+
+Seguir [INSTALL.md](INSTALL.md) para tener el entorno (`.venv`) y
 `third_party/mujoco_menagerie` instalados.
 
-Cada etapa tiene su propia página, con cómo ejecutarla, en qué consiste, qué mirar, cómo
-se resuelve el problema de esa etapa, y qué problemas reales encontramos armándola:
+## Las 3 etapas
 
-1. **[Control heurístico](workshop/01-control-heuristico.md)** — fórmulas a mano por
-   motor + control remoto. Se cae fácil.
-2. **[Reinforcement Learning](workshop/02-reinforcement-learning.md)** — misma tarea, con
-   una política ya entrenada. Camina largas distancias sin caerse.
-3. **[Objetos en el escenario](workshop/03-objetos-en-el-escenario.md)** — cajas y estante
-   en el camino. Choca, empuja objetos, y sigue de pie.
+Cada etapa tiene su propia página con: el objetivo puntual de esa etapa, cómo
+ejecutarla, en qué consiste, qué mirar, cómo se resuelve el problema, las capturas
+reales de las pruebas que hicimos, y qué problemas encontramos armándola — para que
+puedas repetir cada prueba paso a paso y comprobar si te da el mismo resultado.
+
+1. **[Control heurístico](workshop/01-control-heuristico.md)** — objetivo: hacer
+   caminar al robot con fórmulas a mano por motor + control remoto, y encontrar en qué
+   punto se cae.
+2. **[Reinforcement Learning](workshop/02-reinforcement-learning.md)** — objetivo:
+   la misma tarea (caminar sin caerse), reemplazando las fórmulas a mano por una
+   política ya entrenada.
+3. **[Objetos en el escenario](workshop/03-objetos-en-el-escenario.md)** — objetivo:
+   comprobar si la política de RL sigue de pie cuando además tiene que lidiar con
+   cajas y un estante en el camino.
 
 ## Resumen rápido: qué ejecutar en cada etapa
 

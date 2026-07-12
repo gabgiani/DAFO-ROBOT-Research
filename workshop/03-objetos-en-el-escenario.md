@@ -1,5 +1,17 @@
 # Etapa 3 — Agregar objetos al escenario: ¿sigue de pie si choca?
 
+## Objetivo de esta etapa
+
+Comprobar si la política de RL de la etapa 2 sigue sosteniendo el equilibrio cuando el
+camino no está vacío: agregamos dos cajas sueltas y un estante al escenario, algo que
+el entrenamiento original de la política no contempló explícitamente. La pregunta que
+esta etapa responde es concreta: ¿el robot choca, empuja el objeto y sigue de pie, o se
+cae ante un obstáculo no anticipado?
+
+Al terminar esta etapa vas a poder reproducir la misma caminata de la etapa 2, ahora
+con obstáculos físicos reales en el camino, y verificar con tus propios ojos (y con los
+números de posición/altura que registramos) si el robot los empuja y sigue de pie.
+
 ## Cómo se ejecuta
 
 Levantar el visor RL apuntando al escenario con objetos (dos cajas y un estante):

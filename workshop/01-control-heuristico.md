@@ -1,5 +1,17 @@
 # Etapa 1 — Control heurístico (a mano), motor por motor
 
+## Objetivo de esta etapa
+
+Hacer que el robot camine hacia adelante usando un controlador escrito completamente a
+mano (fórmulas fijas por motor + una fuerza de corrección aplicada a la pelvis), y
+encontrar de forma reproducible en qué condiciones se cae. Esta etapa es el punto de
+partida y la base de comparación para las etapas 2 y 3: sin un número real de "acá se
+cae", no hay forma objetiva de decir después que RL es mejor.
+
+Al terminar esta etapa vas a poder reproducir vos mismo, paso a paso: levantar el
+viewer, mandarle un comando de avance, ver que camina unos pasos, y ver cómo pierde el
+equilibrio y cae.
+
 ## Cómo se ejecuta
 
 Levantar el visor (mata cualquier instancia previa automáticamente):
