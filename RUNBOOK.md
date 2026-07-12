@@ -1,184 +1,186 @@
 # Runbook
 
-Esta guía explica cómo ejecutar el simulador y cómo operarlo en el flujo normal de trabajo.
+*[Versión en español](RUNBOOK.es.md)*
 
-## Punto de entrada
+This guide explains how to run the simulator and how to operate it in the normal workflow.
 
-El launcher principal es [simulate_unitree.py](simulate_unitree.py).
+## Entry point
 
-Funciones principales:
+The main launcher is [simulate_unitree.py](simulate_unitree.py).
 
-- Carga escenas de Unitree.
-- Aplica el keyframe inicial.
-- Corre en modo `headless` o `viewer`.
-- Expone control UDP externo si `--control-port` no es `0`.
+Main functions:
 
-## Arranque rápido
+- Loads Unitree scenes.
+- Applies the initial keyframe.
+- Runs in `headless` or `viewer` mode.
+- Exposes external UDP control if `--control-port` is not `0`.
+
+## Quick start
 
 ### Headless
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot g1-hands --mode headless --steps 300
 ```
 
-### Viewer con control UDP
+### Viewer with UDP control
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer
 ```
 
-Por defecto escucha en `127.0.0.1:47001`.
+By default it listens on `127.0.0.1:47001`.
 
-### Viewer sin control UDP
+### Viewer without UDP control
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer --control-port 0
 ```
 
-## Robots soportados
+## Supported robots
 
 - `h1`
 - `g1`
 - `g1-hands`
 
-Ejemplo:
+Example:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot h1 --mode headless --steps 300
 ```
 
 ## Keyframes
 
-Por defecto el launcher usa el keyframe `home`.
+By default the launcher uses the `home` keyframe.
 
-Cambiar keyframe:
+Change keyframe:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer --keyframe home
 ```
 
-Desactivar keyframe:
+Disable keyframe:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot g1-hands --mode headless --keyframe ''
 ```
 
-## Teleoperación
+## Teleoperation
 
-El flujo esperado es:
+The expected flow is:
 
-1. Abrir el viewer.
-2. En otra terminal, lanzar el teleop.
+1. Open the viewer.
+2. In another terminal, launch teleop.
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python teleop_unitree.py --host 127.0.0.1 --port 47001
 ```
 
-Wrapper equivalente:
+Equivalent wrapper:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python teleop_unitree.pyw --host 127.0.0.1 --port 47001
 ```
 
-Controles:
+Controls:
 
-- `W/S`: avance y retroceso
-- `A/D`: giro
-- `Espacio`: centrar avance y giro
+- `W/S`: forward and backward
+- `A/D`: turn
+- `Space`: center forward and turn
 - `R`: reset
-- `P`: pausar
-- `O`: reanudar
-- `J/K`: bajar/subir amplitud
-- `N/M`: bajar/subir frecuencia
-- `Q`: salir
+- `P`: pause
+- `O`: resume
+- `J/K`: decrease/increase amplitude
+- `N/M`: decrease/increase frequency
+- `Q`: quit
 
-## Envío one-shot de comandos
+## One-shot command sending
 
-Para pruebas puntuales, usa [send_unitree_command.py](send_unitree_command.py).
+For quick tests, use [send_unitree_command.py](send_unitree_command.py).
 
-Ejemplos:
+Examples:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python send_unitree_command.py --host 127.0.0.1 --port 47001 --advance 0.8
 ```
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python send_unitree_command.py --host 127.0.0.1 --port 47001 --turn 0.4
 ```
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python send_unitree_command.py --host 127.0.0.1 --port 47001 --center
 ```
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python send_unitree_command.py --host 127.0.0.1 --port 47001 --reset
 ```
 
-## Demo de grasp
+## Grasp demo
 
-La demo disponible es [reach_grasp_demo.py](reach_grasp_demo.py).
+The available demo is [reach_grasp_demo.py](reach_grasp_demo.py).
 
-Sin video:
+Without video:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python reach_grasp_demo.py --no-video
 ```
 
-Con video:
+With video:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python reach_grasp_demo.py
 ```
 
-Salida por defecto:
+Default output:
 
 - `artifacts/g1_reach_grasp.mp4`
 
-## Operación diaria
+## Daily operation
 
-Secuencia recomendada:
+Recommended sequence:
 
-1. Validar modelo en `headless` si cambiaste física o controlador.
-2. Abrir el `viewer` con `mjpython`.
-3. Conectar `teleop_unitree.py` desde otra terminal.
-4. Probar primero `advance=0.2` o `0.4` y subir de forma gradual.
-5. Si el robot cae, usar `R` o reenviar `--reset`.
+1. Validate the model in `headless` if you changed physics or the controller.
+2. Open the `viewer` with `mjpython`.
+3. Connect `teleop_unitree.py` from another terminal.
+4. Test first with `advance=0.2` or `0.4` and increase gradually.
+5. If the robot falls, use `R` or resend `--reset`.
 
-## Fallas habituales
+## Common failures
 
-### Puerto ocupado
+### Port in use
 
 ```bash
 lsof -nP -iUDP:47001
 ```
 
-### Viewer correcto, pero sin mover el robot
+### Viewer opens fine, but the robot doesn't move
 
-Revisar:
+Check:
 
-- Que el viewer esté escuchando en `47001`.
-- Que el teleop apunte al mismo host y puerto.
-- Que no haya otra instancia anterior consumiendo el puerto.
+- That the viewer is listening on `47001`.
+- That teleop points to the same host and port.
+- That there's no previous instance still consuming the port.
 
-### El viewer se reinicia por caída
+### The viewer resets due to a fall
 
-Eso hoy forma parte de la lógica de recuperación del controlador en [interactive_unitree.py](interactive_unitree.py).
+That's currently part of the recovery logic in the controller in [interactive_unitree.py](interactive_unitree.py).
 
-## Archivos operativos principales
+## Main operational files
 
 - [simulate_unitree.py](simulate_unitree.py)
 - [interactive_unitree.py](interactive_unitree.py)

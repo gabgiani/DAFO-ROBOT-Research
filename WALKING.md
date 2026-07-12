@@ -1,111 +1,113 @@
 # Walking Guide
 
-Esta guía resume el estado actual del controlador de caminata y cómo conviene probarlo.
+*[Versión en español](WALKING.es.md)*
 
-## Qué controla hoy la marcha
+This guide summarizes the current state of the walking controller and how best to test it.
 
-El controlador está implementado en [interactive_unitree.py](interactive_unitree.py).
+## What controls the gait today
 
-Variables principales de la marcha:
+The controller is implemented in [interactive_unitree.py](interactive_unitree.py).
 
-- `advance`: intención de avance en `[-1, 1]`
-- `turn`: intención de giro en `[-1, 1]`
-- `amplitude_scale`: amplitud de zancada
-- `frequency_hz`: frecuencia del ciclo
+Main gait variables:
 
-La marcha actual combina:
+- `advance`: forward intent in `[-1, 1]`
+- `turn`: turning intent in `[-1, 1]`
+- `amplitude_scale`: stride amplitude
+- `frequency_hz`: cycle frequency
 
-- Movimiento de cadera, rodilla y tobillo.
-- Balanceo lateral para soporte.
-- Asistencia física aplicada al pelvis con `xfrc_applied`.
+The current gait combines:
 
-No usa traslación directa de `qpos` para mover la base.
+- Hip, knee, and ankle movement.
+- Lateral sway for support.
+- Physical assistance applied to the pelvis with `xfrc_applied`.
 
-## Estado actual
+It does not use direct `qpos` translation to move the base.
 
-Objetivo de esta iteración:
+## Current state
 
-- Quitar el patinaje por arrastre artificial de la base.
-- Hacer que el avance salga del patrón de piernas más una asistencia física consistente.
+Goal of this iteration:
 
-Estado validado en headless:
+- Remove skating caused by artificially dragging the base.
+- Make forward motion come from the leg pattern plus consistent physical assistance.
 
-- `advance=0.8` da avance neto y se mantiene de pie.
-- `advance=1.0` da avance neto y se mantiene de pie en la prueba corta.
+State validated headless:
 
-Estado observado en viewer:
+- `advance=0.8` gives net forward motion and stays standing.
+- `advance=1.0` gives net forward motion and stays standing in the short test.
 
-- Mantener `+1.0` durante mucho tiempo todavía puede terminar en caída y reset.
-- El comportamiento en viewer sigue siendo menos estable que el headless.
+State observed in the viewer:
 
-## Cómo probar la marcha
+- Holding `+1.0` for a long time can still end in a fall and reset.
+- Behavior in the viewer is still less stable than headless.
 
-Primero abrir el viewer:
+## How to test the gait
+
+First open the viewer:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer
 ```
 
-Luego abrir el teleop:
+Then open teleop:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python teleop_unitree.py --host 127.0.0.1 --port 47001
 ```
 
-## Rango recomendado de prueba
+## Recommended test range
 
-Para no saturar el controlador desde el primer segundo:
+To avoid saturating the controller from the first second:
 
-1. Empezar en `advance=0.2`.
-2. Subir a `0.4`.
-3. Probar `0.6` y `0.8`.
-4. Usar `1.0` solo para pruebas cortas.
+1. Start at `advance=0.2`.
+2. Increase to `0.4`.
+3. Try `0.6` and `0.8`.
+4. Use `1.0` only for short tests.
 
-Recomendación práctica actual:
+Current practical recommendation:
 
-- Para avance controlado: `0.4` a `0.8`.
-- Para stress test: `1.0`.
+- For controlled forward motion: `0.4` to `0.8`.
+- For stress testing: `1.0`.
 
-## Qué significan los controles de marcha
+## What the gait controls mean
 
-- `W/S`: cambia `advance`.
-- `A/D`: cambia `turn`.
-- `J/K`: cambia `amplitude_scale`.
-- `N/M`: cambia `frequency_hz`.
+- `W/S`: changes `advance`.
+- `A/D`: changes `turn`.
+- `J/K`: changes `amplitude_scale`.
+- `N/M`: changes `frequency_hz`.
 
-En la práctica:
+In practice:
 
-- Más amplitud: zancada más grande, pero más riesgo de perder estabilidad.
-- Más frecuencia: pasos más rápidos, pero más sensibles a caídas.
+- More amplitude: bigger stride, but more risk of losing stability.
+- More frequency: faster steps, but more prone to falls.
 
-## Validación rápida sin viewer
+## Quick validation without the viewer
 
-Si cambias el controlador, la validación mínima recomendada es:
+If you change the controller, the minimum recommended validation is:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot g1-hands --mode headless --steps 300
 ```
 
-Y luego una prueba focalizada similar a las usadas durante esta sesión:
+And then a focused test similar to the ones used during this session:
 
-- medir `pelvis_delta`
-- medir `pelvis_min_height`
-- verificar que no reaparezca patinaje
+- measure `pelvis_delta`
+- measure `pelvis_min_height`
+- verify skating doesn't reappear
 
-## Limitaciones actuales
+## Current limitations
 
-- La caminata todavía no es una locomoción robusta de cuerpo completo.
-- El viewer y el headless no se comportan exactamente igual bajo comandos largos.
-- El controlador actual está pensado para iterar rápido, no para una política dinámica completa.
+- Walking is still not robust full-body locomotion.
+- The viewer and headless don't behave exactly the same under long commands.
+- The current controller is meant for fast iteration, not a full dynamic policy.
 
-## Siguiente mejora técnica lógica
+## Next logical technical improvement
 
-Si se sigue trabajando la marcha, lo siguiente debería ser:
+If work on the gait continues, the next steps should be:
 
-1. separar control de soporte y swing por pie
-2. medir deslizamiento real del pie en contacto
-3. limitar el avance máximo cuando el soporte cae a un solo pie
-4. desacoplar mejor avance y giro
+1. separate support and swing control per foot
+2. measure actual slip of the foot in contact
+3. limit maximum advance when support drops to a single foot
+4. better decouple advance and turn

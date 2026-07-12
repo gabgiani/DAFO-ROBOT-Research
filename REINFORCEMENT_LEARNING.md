@@ -1,205 +1,212 @@
-# Reinforcement Learning: cómo se mantiene parado el robot
+# Reinforcement Learning: how the robot stays standing
 
-Este documento explica, en términos simples, cómo funciona la política de Reinforcement
-Learning (RL) que usamos en [simulate_g1_rl.py](simulate_g1_rl.py) para que el G1 se mantenga
-de pie y camine, y en qué se diferencia del controlador manual de
+*[Versión en español](REINFORCEMENT_LEARNING.es.md)*
+
+This document explains, in simple terms, how the Reinforcement Learning (RL) policy we
+use in [simulate_g1_rl.py](simulate_g1_rl.py) works to keep the G1 standing and walking,
+and how it differs from the manual controller in
 [interactive_unitree.py](interactive_unitree.py).
 
-## El problema que resuelve
+## The problem it solves
 
-Un robot humanoide de pie es físicamente **inestable**: es una torre alta y angosta parada
-sobre dos pies chicos. Cualquier pequeño error de ángulo en una pierna, cualquier empuje,
-lo puede tirar. Mantenerlo de pie (y caminando) requiere corregir constantemente el
-equilibrio, muchas veces por segundo.
+A standing humanoid robot is physically **unstable**: it's a tall, narrow tower standing
+on two small feet. Any small angle error in a leg, any push, can knock it over. Keeping
+it standing (and walking) requires constantly correcting balance, many times per second.
 
-Hay dos formas de resolver esto:
+There are two ways to solve this:
 
-1. **A mano** (lo que hace `interactive_unitree.py`): un humano diseña fórmulas fijas
-   (amplitud de zancada, flexión de rodilla, fuerzas de corrección) y las ajusta por prueba
-   y error. Funciona, pero es frágil: cualquier situación no anticipada por esas fórmulas
-   (una caja en el piso, un piso irregular, un empujón) la puede romper.
-2. **Con una política aprendida** (lo que hace `simulate_g1_rl.py`): en vez de que un humano
-   escriba las fórmulas, una red neuronal **aprendió sola**, a base de millones de intentos
-   en simulación, qué torque mandarle a cada motor para no caerse. Esa red es la "política".
+1. **By hand** (what `interactive_unitree.py` does): a human designs fixed formulas
+   (stride amplitude, knee flexion, correction forces) and tunes them by trial and
+   error. It works, but it's fragile: any situation not anticipated by those formulas
+   (a box on the floor, an uneven floor, a push) can break it.
+2. **With a learned policy** (what `simulate_g1_rl.py` does): instead of a human writing
+   the formulas, a neural network **learned on its own**, through millions of attempts
+   in simulation, what torque to send to each motor to avoid falling. That network is
+   the "policy".
 
-## Qué es Reinforcement Learning, en corto
+## What Reinforcement Learning is, in short
 
-RL es una forma de entrenar un programa (la "política") por prueba y error, no mostrándole
-ejemplos correctos (como en aprendizaje supervisado), sino dejándolo actuar y dándole un
-premio o castigo según el resultado.
+RL is a way to train a program (the "policy") by trial and error, not by showing it
+correct examples (as in supervised learning), but by letting it act and giving it a
+reward or penalty based on the outcome.
 
-Los cuatro elementos básicos:
+The four basic elements:
 
-- **Agente**: la política (red neuronal) que decide qué hacer.
-- **Entorno**: la simulación física del robot (MuJoCo / Isaac Gym durante el entrenamiento).
-- **Acción**: lo que el agente decide en cada instante (en este caso, la posición objetivo
-  de cada uno de los 12 motores de las piernas).
-- **Recompensa**: un número que le dice al agente qué tan bien lo hizo (por ejemplo: +premio
-  por seguir la velocidad pedida y mantenerse erguido, -castigo por caerse o gastar mucha
-  energía).
+- **Agent**: the policy (neural network) that decides what to do.
+- **Environment**: the physical simulation of the robot (MuJoCo / Isaac Gym during
+  training).
+- **Action**: what the agent decides at each instant (in this case, the target position
+  of each of the 12 leg motors).
+- **Reward**: a number that tells the agent how well it did (e.g.: +reward for following
+  the requested velocity and staying upright, -penalty for falling or wasting a lot of
+  energy).
 
-El entrenamiento consiste en repetir este ciclo millones de veces, en miles de simulaciones
-en paralelo, ajustando la red neuronal poco a poco para que las acciones que llevan a mayor
-recompensa se vuelvan más probables.
+Training consists of repeating this cycle millions of times, across thousands of
+parallel simulations, gradually adjusting the neural network so that actions leading to
+higher reward become more likely.
 
 ```mermaid
 flowchart LR
-    Obs[Observacion: sensores del robot] --> Policy[Politica: red neuronal]
-    Policy --> Action[Accion: 12 posiciones objetivo]
-    Action --> Sim[Simulacion fisica]
-    Sim --> Reward[Recompensa: de pie? avanzo? cayo?]
-    Reward -->|ajusta pesos| Policy
+    Obs[Observation: robot sensors] --> Policy[Policy: neural network]
+    Policy --> Action[Action: 12 target positions]
+    Action --> Sim[Physics simulation]
+    Sim --> Reward[Reward: standing? advanced? fell?]
+    Reward -->|adjusts weights| Policy
     Sim --> Obs
 ```
 
-Ese ciclo de entrenamiento **no ocurre en este repo**: la política ya viene entrenada por
-Unitree (el archivo [motion.pt](third_party/unitree_rl_gym/deploy/pre_train/g1/motion.pt)).
-Lo que hacemos en `simulate_g1_rl.py` es solo la mitad derecha del diagrama, en modo
-"inferencia" (usar la política ya entrenada, no seguir entrenándola).
+That training cycle **does not happen in this repo**: the policy comes already trained
+by Unitree (the file
+[motion.pt](third_party/unitree_rl_gym/deploy/pre_train/g1/motion.pt)). What we do in
+`simulate_g1_rl.py` is only the right half of the diagram, in "inference" mode (using
+the already-trained policy, not continuing to train it).
 
-## Cómo se usa esa política ya entrenada (lo que corre en este repo)
+## How that already-trained policy is used (what runs in this repo)
 
-En cada ciclo de control (50 Hz, cada 10 pasos de físca de 2ms), `simulate_g1_rl.py` hace:
+On each control cycle (50 Hz, every 10 physics steps of 2ms), `simulate_g1_rl.py` does:
 
-1. **Lee el estado del robot** (la "observación", 47 números):
-   - Velocidad angular de la pelvis (giroscopio).
-   - Hacia dónde apunta la gravedad vista desde el robot (si está inclinado, hacia adelante,
-     hacia atrás, etc.).
-   - El comando actual (avance / lateral / giro que vos le mandás con W/A/S/D).
-   - Posición y velocidad de cada uno de los 12 motores de las piernas.
-   - La última acción que tomó (para que tenga "memoria" de qué estaba haciendo).
-   - Una señal de fase (seno/coseno) que le indica en qué punto del ciclo de paso está.
+1. **Reads the robot's state** (the "observation", 47 numbers):
+   - Pelvis angular velocity (gyroscope).
+   - Which direction gravity points as seen from the robot (whether it's tilted
+     forward, backward, etc.).
+   - The current command (advance / lateral / turn you send with W/A/S/D).
+   - Position and velocity of each of the 12 leg motors.
+   - The last action it took (so it has "memory" of what it was doing).
+   - A phase signal (sine/cosine) indicating where it is in the step cycle.
 
-2. **Le pasa esa observación a la red neuronal** (`policy(obs_tensor)` en el código), que
-   devuelve 12 números: la posición objetivo para cada motor de las piernas.
+2. **Passes that observation to the neural network** (`policy(obs_tensor)` in the
+   code), which returns 12 numbers: the target position for each leg motor.
 
-3. **Un controlador PD clásico** (no aprendido, matemática simple) convierte esa posición
-   objetivo en el torque real que hay que aplicarle a cada motor:
+3. **A classic PD controller** (not learned, simple math) converts that target
+   position into the actual torque to apply to each motor:
 
    ```
-   torque = (posicion_objetivo - posicion_actual) * kp + (velocidad_objetivo - velocidad_actual) * kd
+   torque = (target_position - current_position) * kp + (target_velocity - current_velocity) * kd
    ```
 
-4. **MuJoCo avanza la física** con esos torques, y el ciclo vuelve a empezar leyendo el
-   nuevo estado del robot.
+4. **MuJoCo advances the physics** with those torques, and the cycle starts again
+   reading the robot's new state.
 
 ```mermaid
 sequenceDiagram
-    participant Teclado as Teclado (W/A/S/D)
+    participant Keyboard as Keyboard (W/A/S/D)
     participant Script as simulate_g1_rl.py
-    participant Red as Politica (motion.pt)
-    participant PD as Control PD
-    participant Fisica as MuJoCo
+    participant Net as Policy (motion.pt)
+    participant PD as PD Control
+    participant Physics as MuJoCo
 
-    Teclado->>Script: cmd = avance/lateral/giro
-    loop cada 50 Hz
-        Script->>Script: arma observacion (47 numeros)
-        Script->>Red: observacion
-        Red-->>Script: accion (12 posiciones objetivo)
-        Script->>PD: posicion objetivo vs posicion actual
-        PD-->>Fisica: torque por motor
-        Fisica-->>Script: nueva posicion/velocidad/orientacion
+    Keyboard->>Script: cmd = advance/lateral/turn
+    loop every 50 Hz
+        Script->>Script: builds observation (47 numbers)
+        Script->>Net: observation
+        Net-->>Script: action (12 target positions)
+        Script->>PD: target position vs current position
+        PD-->>Physics: torque per motor
+        Physics-->>Script: new position/velocity/orientation
     end
 ```
 
-## Cuántos motores y "sensores" hay realmente
+## How many motors and "sensors" there really are
 
-Es fácil perderse con tantos números. Esta tabla es la referencia exacta de este modelo
-(`g1_12dof.xml`, el que usa `simulate_g1_rl.py`):
+It's easy to get lost with so many numbers. This table is the exact reference for this
+model (`g1_12dof.xml`, the one `simulate_g1_rl.py` uses):
 
-### Los 12 motores (actuadores)
+### The 12 motors (actuators)
 
-Son `<motor>` de **torque**, no de posición (a diferencia del modelo con manos que usa
-`interactive_unitree.py`). Eso importa porque el número que ves en el panel no es un
-ángulo objetivo, es la fuerza que se está aplicando ahora mismo:
+These are **torque** `<motor>` actuators, not position ones (unlike the hands model
+used by `interactive_unitree.py`). That matters because the number you see in the panel
+is not a target angle, it's the force currently being applied:
 
-| # | Nombre | Articulación |
+| # | Name | Joint |
 |---|---|---|
-| 0 | `left_hip_pitch_joint` | cadera izquierda, adelante/atrás |
-| 1 | `left_hip_roll_joint` | cadera izquierda, lado a lado |
-| 2 | `left_hip_yaw_joint` | cadera izquierda, giro |
-| 3 | `left_knee_joint` | rodilla izquierda |
-| 4 | `left_ankle_pitch_joint` | tobillo izquierdo, adelante/atrás |
-| 5 | `left_ankle_roll_joint` | tobillo izquierdo, lado a lado |
-| 6 | `right_hip_pitch_joint` | cadera derecha, adelante/atrás |
-| 7 | `right_hip_roll_joint` | cadera derecha, lado a lado |
-| 8 | `right_hip_yaw_joint` | cadera derecha, giro |
-| 9 | `right_knee_joint` | rodilla derecha |
-| 10 | `right_ankle_pitch_joint` | tobillo derecho, adelante/atrás |
-| 11 | `right_ankle_roll_joint` | tobillo derecho, lado a lado |
+| 0 | `left_hip_pitch_joint` | left hip, forward/backward |
+| 1 | `left_hip_roll_joint` | left hip, side to side |
+| 2 | `left_hip_yaw_joint` | left hip, rotation |
+| 3 | `left_knee_joint` | left knee |
+| 4 | `left_ankle_pitch_joint` | left ankle, forward/backward |
+| 5 | `left_ankle_roll_joint` | left ankle, side to side |
+| 6 | `right_hip_pitch_joint` | right hip, forward/backward |
+| 7 | `right_hip_roll_joint` | right hip, side to side |
+| 8 | `right_hip_yaw_joint` | right hip, rotation |
+| 9 | `right_knee_joint` | right knee |
+| 10 | `right_ankle_pitch_joint` | right ankle, forward/backward |
+| 11 | `right_ankle_roll_joint` | right ankle, side to side |
 
-No hay motores de brazos/manos en este modelo (ver "Limitaciones" más abajo).
+There are no arm/hand motors in this model (see "Limitations" below).
 
-### Los 47 números de la observación ("sensores")
+### The 47 observation numbers ("sensors")
 
-Ojo: **no son sensores físicos de MuJoCo** (no hay ningún `<sensor>` declarado en
-`g1_12dof.xml`). Son 47 números que el script calcula en cada ciclo a partir del estado
-físico (`qpos`/`qvel`) y se los pasa a la red. Así se arman, en orden:
+Careful: **these are not physical MuJoCo sensors** (there's no `<sensor>` declared in
+`g1_12dof.xml`). They are 47 numbers the script computes each cycle from the physical
+state (`qpos`/`qvel`) and passes to the network. Here's how they're assembled, in order:
 
-| Rango en `obs[]` | Cantidad | Qué es | De dónde sale |
+| Range in `obs[]` | Count | What it is | Where it comes from |
 |---|---|---|---|
-| `0:3` | 3 | Velocidad angular de la pelvis (giroscopio) | `data.qvel[3:6]` |
-| `3:6` | 3 | Hacia dónde "cae" la gravedad visto desde el robot | calculado desde el cuaternión de orientación (`qpos[3:7]`) |
-| `6:9` | 3 | Comando actual (avance, lateral, giro) ya escalado | tu `cmd` (W/A/S/D o UDP) × `cmd_scale` |
-| `9:21` | 12 | Posición de cada uno de los 12 motores, relativa a la pose neutra | `data.qpos[7:19]` |
-| `21:33` | 12 | Velocidad de cada uno de los 12 motores | `data.qvel[6:18]` |
-| `33:45` | 12 | La acción que la red decidió el ciclo anterior (le da "memoria") | guardado del paso previo |
-| `45:47` | 2 | Fase del ciclo de paso (seno/coseno) | reloj interno, no depende de sensores |
+| `0:3` | 3 | Pelvis angular velocity (gyroscope) | `data.qvel[3:6]` |
+| `3:6` | 3 | Direction gravity "falls" as seen from the robot | computed from the orientation quaternion (`qpos[3:7]`) |
+| `6:9` | 3 | Current command (advance, lateral, turn), already scaled | your `cmd` (W/A/S/D or UDP) × `cmd_scale` |
+| `9:21` | 12 | Position of each of the 12 motors, relative to the neutral pose | `data.qpos[7:19]` |
+| `21:33` | 12 | Velocity of each of the 12 motors | `data.qvel[6:18]` |
+| `33:45` | 12 | The action the network decided on the previous cycle (gives it "memory") | saved from the previous step |
+| `45:47` | 2 | Step-cycle phase (sine/cosine) | internal clock, doesn't depend on sensors |
 
-Total: 3+3+3+12+12+12+2 = **47**, que es exactamente `num_obs` en la config.
+Total: 3+3+3+12+12+12+2 = **47**, which is exactly `num_obs` in the config.
 
-## Qué significan los paneles "Joint" y "Control" del visor
+## What the "Joint" and "Control" viewer panels mean
 
-Si abrís el panel nativo de MuJoCo (los mismos de la captura de este chat), vas a ver dos
-secciones separadas para los mismos 12 nombres, pero **no significan lo mismo**:
+If you open MuJoCo's native panel (the same ones from this chat's screenshot), you'll
+see two separate sections for the same 12 names, but **they don't mean the same thing**:
 
-- **"Joint"**: es el ángulo real medido de cada articulación, en radianes (por ejemplo
-  `left_knee_joint = 0.493` significa la rodilla izquierda flexionada ~28°). Es de solo
-  lectura, viene de `data.qpos`.
-- **"Control"**: es el **torque** (fuerza de giro, en Newton-metro) que se le está mandando
-  a ese motor *en este instante*, calculado por la fórmula PD:
+- **"Joint"**: is the real measured angle of each joint, in radians (e.g.
+  `left_knee_joint = 0.493` means the left knee flexed ~28°). It's read-only, it comes
+  from `data.qpos`.
+- **"Control"**: is the **torque** (turning force, in Newton-meters) currently being
+  sent to that motor *at this instant*, computed by the PD formula:
 
   ```
-  torque = (posicion_objetivo - posicion_actual) * kp + (velocidad_objetivo - velocidad_actual) * kd
+  torque = (target_position - current_position) * kp + (target_velocity - current_velocity) * kd
   ```
 
-  Con `kp` hasta 150 para algunos motores, errores de posición chicos ya dan torques de
-  20-30, como se ve en la captura (`left_hip_pitch_j = 21.8`, `left_hip_roll_j = 20.4`, etc.).
+  With `kp` up to 150 for some motors, small position errors already produce torques of
+  20-30, as seen in the screenshot (`left_hip_pitch_j = 21.8`, `left_hip_roll_j =
+  20.4`, etc.).
 
-**Diferencia clave con el visor heurístico:** en `interactive_unitree.py` (modelo con
-manos) el panel "Control" mueve motores de **posición**, así que arrastrar un slider ahí
-sí deja al robot en esa pose (por eso existe el `--raw-mode`). Acá, en `simulate_g1_rl.py`,
-el panel "Control" son motores de **torque** recalculados por nuestro propio código 500
-veces por segundo — si arrastrás un slider ahí a mano, el próximo ciclo de física lo va a
-pisar con el valor que calcula la política. Para este modelo, el control real se hace
-siempre a través de `cmd` (W/A/S/D o `send_unitree_command.py`), no tocando el panel.
+**Key difference from the heuristic viewer:** in `interactive_unitree.py` (hands model)
+the "Control" panel moves **position** motors, so dragging a slider there does leave the
+robot in that pose (that's why `--raw-mode` exists). Here, in `simulate_g1_rl.py`, the
+"Control" panel shows **torque** motors recalculated by our own code 500 times per
+second — if you drag a slider there by hand, the next physics cycle will overwrite it
+with the value the policy computes. For this model, real control is always done through
+`cmd` (W/A/S/D or `send_unitree_command.py`), not by touching the panel.
 
-## Por qué esto mantiene mejor el equilibrio que las fórmulas a mano
+## Why this keeps balance better than hand-written formulas
 
-- Las fórmulas a mano (`interactive_unitree.py`) fueron ajustadas para **una situación
-  esperada** (piso plano, sin objetos, marcha hacia adelante). Cuando la realidad se desvía
-  un poco de eso, se cae, porque las fórmulas no "saben" reaccionar a algo que no
-  anticipamos.
-- La política de RL fue entrenada con **miles de variaciones** (empujones aleatorios, pisos
-  irregulares, distintas velocidades pedidas, fallas de sensor simuladas) en paralelo durante
-  el entrenamiento. Aprendió una estrategia de balance mucho más general, no una fórmula fija
-  para un solo caso.
-- Prueba real en este repo: con `advance=0.5` caminó **~3.65 metros sin caerse**, incluso con
-  cajas en el piso ([g1_warehouse_scene.xml](third_party/unitree_rl_gym/resources/robots/g1_description/g1_warehouse_scene.xml)),
-  algo que el controlador a mano nunca logró de forma confiable.
+- The hand-written formulas (`interactive_unitree.py`) were tuned for **one expected
+  situation** (flat floor, no objects, forward march). When reality deviates a bit from
+  that, it falls, because the formulas don't "know" how to react to something we didn't
+  anticipate.
+- The RL policy was trained with **thousands of variations** (random pushes, uneven
+  floors, different requested speeds, simulated sensor failures) in parallel during
+  training. It learned a much more general balancing strategy, not a fixed formula for
+  a single case.
+- Real test in this repo: with `advance=0.5` it walked **~3.65 meters without falling**,
+  even with boxes on the floor
+  ([g1_warehouse_scene.xml](third_party/unitree_rl_gym/resources/robots/g1_description/g1_warehouse_scene.xml)),
+  something the hand-tuned controller never achieved reliably.
 
-## Limitaciones importantes
+## Important limitations
 
-- Esta política **solo controla las 12 piernas**. No tiene brazos/manos entrenados, así que
-  no puede agarrar ni manipular objetos, solo caminar hacia ellos.
-- Fue entrenada en un entorno específico (probablemente piso plano en simulación). Terrenos
-  muy distintos a eso (escaleras, pendientes fuertes) pueden no funcionar bien.
-- Es una "caja negra": no hay fórmulas legibles que uno pueda ajustar a mano como en
-  `interactive_unitree.py`. Si el comportamiento no gusta, la única forma de cambiarlo es
-  reentrenar la red (algo que no hacemos en este repo, solo la corremos ya entrenada).
+- This policy **only controls the 12 legs**. It has no trained arms/hands, so it can't
+  grab or manipulate objects, only walk toward them.
+- It was trained in a specific environment (probably a flat floor in simulation).
+  Very different terrains (stairs, steep slopes) may not work well.
+- It's a "black box": there are no readable formulas you can tune by hand like in
+  `interactive_unitree.py`. If the behavior isn't to your liking, the only way to
+  change it is to retrain the network (something we don't do in this repo, we only run
+  it already trained).
 
-## Dónde está el código relevante
+## Where the relevant code is
 
-- [simulate_g1_rl.py](simulate_g1_rl.py): loop de inferencia descrito arriba.
-- [third_party/unitree_rl_gym/deploy/pre_train/g1/motion.pt](third_party/unitree_rl_gym/deploy/pre_train/g1/motion.pt): la política ya entrenada (TorchScript).
-- [third_party/unitree_rl_gym/resources/robots/g1_description/g1_12dof.xml](third_party/unitree_rl_gym/resources/robots/g1_description/g1_12dof.xml): el modelo físico (solo piernas) que la política espera controlar.
+- [simulate_g1_rl.py](simulate_g1_rl.py): the inference loop described above.
+- [third_party/unitree_rl_gym/deploy/pre_train/g1/motion.pt](third_party/unitree_rl_gym/deploy/pre_train/g1/motion.pt): the already-trained policy (TorchScript).
+- [third_party/unitree_rl_gym/resources/robots/g1_description/g1_12dof.xml](third_party/unitree_rl_gym/resources/robots/g1_description/g1_12dof.xml): the physical model (legs only) that the policy expects to control.

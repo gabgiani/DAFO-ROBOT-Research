@@ -1,179 +1,181 @@
 # dafo-human
 
-Base mínima para instalar, ejecutar y entender cómo se usa este simulador de MuJoCo con robots Unitree.
+*[Versión en español](README.es.md)*
 
-## Mapa de documentación
+Minimal base to install, run, and understand how this MuJoCo simulator for Unitree robots is used.
 
-- [INSTALL.md](INSTALL.md): instalación local y validación base.
-- [RUNBOOK.md](RUNBOOK.md): operación diaria del simulador, viewer, teleop y demo.
-- [WALKING.md](WALKING.md): estado actual del controlador de caminata y cómo probarlo.
-- [WORKSHOP.md](WORKSHOP.md): recorrido paso a paso — control a mano vs. Reinforcement Learning vs. objetos en el escenario.
-- [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): cómo funciona por dentro la política de RL que mantiene al robot parado.
+## Documentation map
 
-## Qué hay en este repositorio
+- [INSTALL.md](INSTALL.md): local installation and baseline validation.
+- [RUNBOOK.md](RUNBOOK.md): day-to-day operation of the simulator, viewer, teleop, and demo.
+- [WALKING.md](WALKING.md): current state of the walking controller and how to test it.
+- [WORKSHOP.md](WORKSHOP.md): step-by-step walkthrough — manual control vs. Reinforcement Learning vs. objects in the scene.
+- [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): how the RL policy that keeps the robot standing works internally.
 
-Este proyecto está orientado a ejecución local. Hoy no incluye un pipeline de despliegue remoto, contenedores ni scripts de infraestructura. El flujo real es:
+## What's in this repository
 
-1. Instalar dependencias Python.
-2. Tener disponible `third_party/mujoco_menagerie`.
-3. Lanzar el simulador en modo `viewer` o `headless`.
-4. Controlarlo desde otra terminal por UDP con `teleop_unitree.py`.
+This project is oriented toward local execution. Today it does not include a remote deployment pipeline, containers, or infrastructure scripts. The real flow is:
 
-## Requisitos
+1. Install Python dependencies.
+2. Have `third_party/mujoco_menagerie` available.
+3. Launch the simulator in `viewer` or `headless` mode.
+4. Control it from another terminal over UDP with `teleop_unitree.py`.
 
-- macOS o Linux con Python 3.
-- Un virtualenv en `.venv`.
+## Requirements
+
+- macOS or Linux with Python 3.
+- A virtualenv in `.venv`.
 - MuJoCo Python `3.2.7`.
-- La carpeta `third_party/mujoco_menagerie` con los modelos Unitree.
-- Opcional: `ffmpeg` para exportar video en la demo de grasp.
+- The `third_party/mujoco_menagerie` folder with the Unitree models.
+- Optional: `ffmpeg` to export video in the grasp demo.
 
-## Instalación
+## Installation
 
-La guía detallada está en [INSTALL.md](INSTALL.md).
+The detailed guide is in [INSTALL.md](INSTALL.md).
 
-Crear el entorno e instalar dependencias:
+Create the environment and install dependencies:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-Si falta la menagerie de MuJoCo, clónala dentro de `third_party` para que existan rutas como estas:
+If the MuJoCo menagerie is missing, clone it inside `third_party` so paths like these exist:
 
 - `third_party/mujoco_menagerie/unitree_h1/scene.xml`
 - `third_party/mujoco_menagerie/unitree_g1/scene.xml`
 - `third_party/mujoco_menagerie/unitree_g1/scene_with_hands.xml`
 
-## Arranque rápido
+## Quick start
 
-Prueba headless para validar que MuJoCo compila el modelo:
+Headless test to validate that MuJoCo compiles the model:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot g1-hands --mode headless --steps 300
 ```
 
-Abrir el simulador con viewer:
+Open the simulator with the viewer:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer
 ```
 
-Modelos soportados por el launcher:
+Models supported by the launcher:
 
 - `h1`
 - `g1`
 - `g1-hands`
 
-## Cómo se “despliega” hoy
+## How this "deploys" today
 
-En este repo, despliegue significa ejecución local del simulador. No existe una etapa separada de build/deploy a servidor.
+In this repo, deployment means local execution of the simulator. There is no separate build/deploy stage to a server.
 
-El punto de entrada es [simulate_unitree.py](simulate_unitree.py), que:
+The entry point is [simulate_unitree.py](simulate_unitree.py), which:
 
-- Resuelve la escena del robot.
-- Compila el modelo MuJoCo.
-- Aplica el keyframe inicial.
-- Abre viewer o corre una prueba headless.
-- Puede escuchar control externo por UDP en `127.0.0.1:47001`.
+- Resolves the robot's scene.
+- Compiles the MuJoCo model.
+- Applies the initial keyframe.
+- Opens the viewer or runs a headless test.
+- Can listen for external control over UDP on `127.0.0.1:47001`.
 
-## Control del robot
+## Controlling the robot
 
-La operación completa está documentada en [RUNBOOK.md](RUNBOOK.md).
+Full operation is documented in [RUNBOOK.md](RUNBOOK.md).
 
-El viewer corre la física y escucha comandos externos por UDP. El teleop se ejecuta en otra terminal:
+The viewer runs the physics and listens for external commands over UDP. Teleop runs in another terminal:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python teleop_unitree.py --host 127.0.0.1 --port 47001
 ```
 
-También existe el wrapper:
+There's also a wrapper:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python teleop_unitree.pyw --host 127.0.0.1 --port 47001
 ```
 
-Controles del teleop:
+Teleop controls:
 
-- `W/S`: avance y retroceso
-- `A/D`: giro
-- `Espacio`: centrar joystick
+- `W/S`: forward and backward
+- `A/D`: turn
+- `Space`: center joystick
 - `R`: reset
-- `P/O`: pausar y reanudar
-- `J/K`: bajar/subir amplitud
-- `N/M`: bajar/subir frecuencia
-- `Q`: salir
+- `P/O`: pause and resume
+- `J/K`: decrease/increase amplitude
+- `N/M`: decrease/increase frequency
+- `Q`: quit
 
-## Demo disponible
+## Available demo
 
-Hay una demo de reach-and-grasp para G1 con manos en [reach_grasp_demo.py](reach_grasp_demo.py).
+There's a reach-and-grasp demo for the G1 with hands in [reach_grasp_demo.py](reach_grasp_demo.py).
 
-Ejecutar sin video:
+Run without video:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python reach_grasp_demo.py --no-video
 ```
 
-Exportar video:
+Export video:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python reach_grasp_demo.py
 ```
 
-El video se escribe por defecto en `artifacts/g1_reach_grasp.mp4`.
+The video is written by default to `artifacts/g1_reach_grasp.mp4`.
 
-## Archivos principales
+## Main files
 
-- [simulate_unitree.py](simulate_unitree.py): launcher principal.
-- [interactive_unitree.py](interactive_unitree.py): loop del viewer y controlador interactivo.
-- [external_control.py](external_control.py): transporte UDP.
-- [teleop_unitree.py](teleop_unitree.py): teclado en raw mode para mandar comandos.
-- [send_unitree_command.py](send_unitree_command.py): envío one-shot de comandos UDP.
-- [reach_grasp_demo.py](reach_grasp_demo.py): demo de alcance y agarre.
+- [simulate_unitree.py](simulate_unitree.py): main launcher.
+- [interactive_unitree.py](interactive_unitree.py): viewer loop and interactive controller.
+- [external_control.py](external_control.py): UDP transport.
+- [teleop_unitree.py](teleop_unitree.py): raw-mode keyboard to send commands.
+- [send_unitree_command.py](send_unitree_command.py): one-shot UDP command sending.
+- [reach_grasp_demo.py](reach_grasp_demo.py): reach and grasp demo.
 
-## Problemas comunes
+## Common issues
 
-Si el viewer no abre correctamente:
+If the viewer doesn't open correctly:
 
-- Usa `.venv/bin/mjpython` en vez de `.venv/bin/python` para el modo `viewer`.
-- Verifica que el puerto `47001` no esté ocupado por otra instancia.
+- Use `.venv/bin/mjpython` instead of `.venv/bin/python` for `viewer` mode.
+- Check that port `47001` isn't already in use by another instance.
 
-Si aparece un error de puerto ocupado:
+If a "port in use" error appears:
 
 ```bash
 lsof -nP -iUDP:47001
 ```
 
-Si la escena no existe:
+If the scene doesn't exist:
 
-- Revisa que `third_party/mujoco_menagerie` esté presente.
-- O usa `--xml /ruta/a/scene.xml` para pasar una escena personalizada.
+- Check that `third_party/mujoco_menagerie` is present.
+- Or use `--xml /path/to/scene.xml` to pass a custom scene.
 
-## Comandos útiles
+## Useful commands
 
-Viewer con control UDP desactivado:
+Viewer with UDP control disabled:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer --control-port 0
 ```
 
-Viewer con cierre automático para validar arranque:
+Viewer with automatic close to validate startup:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer --max-seconds 10
 ```
 
-Prueba headless con otro robot:
+Headless test with another robot:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot h1 --mode headless --steps 300
 ```

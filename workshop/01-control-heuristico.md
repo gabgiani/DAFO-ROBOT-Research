@@ -1,126 +1,126 @@
-# Etapa 1 — Control heurístico (a mano), motor por motor
+# Stage 1 — Heuristic control (by hand), motor by motor
 
-## Objetivo de esta etapa
+*[Versión en español](01-control-heuristico.es.md)*
 
-Hacer que el robot camine hacia adelante usando un controlador escrito completamente a
-mano (fórmulas fijas por motor + una fuerza de corrección aplicada a la pelvis), y
-encontrar de forma reproducible en qué condiciones se cae. Esta etapa es el punto de
-partida y la base de comparación para las etapas 2 y 3: sin un número real de "acá se
-cae", no hay forma objetiva de decir después que RL es mejor.
+## Objective of this stage
 
-Al terminar esta etapa vas a poder reproducir vos mismo, paso a paso: levantar el
-viewer, mandarle un comando de avance, ver que camina unos pasos, y ver cómo pierde el
-equilibrio y cae.
+Make the robot walk forward using a controller written entirely by hand (fixed
+formulas per motor + a correction force applied to the pelvis), and reproducibly find
+the conditions under which it falls. This stage is the starting point and the
+comparison baseline for stages 2 and 3: without a real "here it falls" number, there's
+no objective way to later say RL is better.
 
-## Cómo se ejecuta
+By the end of this stage you'll be able to reproduce, step by step: open the viewer,
+send it an advance command, watch it walk a few steps, and watch it lose balance and
+fall.
 
-Levantar el visor (mata cualquier instancia previa automáticamente):
+## How to run it
+
+Start the viewer (automatically kills any previous instance):
 
 ```bash
 ./run_viewer.sh
 ```
 
-En otra terminal, mandar comandos por control remoto (UDP):
+In another terminal, send commands via remote control (UDP):
 
 ```bash
 .venv/bin/python send_unitree_command.py --advance 0.5
 ```
 
-Otras variantes útiles:
+Other useful variants:
 
 ```bash
-# marcha en el sitio (levantar piernas sin avanzar)
+# marching in place (lift legs without advancing)
 .venv/bin/python send_unitree_command.py --march 1.0
 
-# control por teclado en vez de comandos sueltos
+# keyboard control instead of one-off commands
 .venv/bin/python teleop_unitree.py --host 127.0.0.1 --port 47001
 
-# mover cada motor a mano desde el panel nativo del visor
+# move each motor by hand from the viewer's native panel
 .venv/bin/python send_unitree_command.py --raw-mode
 ```
 
-## En qué consiste
+## What it consists of
 
-El controlador ([interactive_unitree.py](../interactive_unitree.py)) traduce un comando de
-alto nivel (`avance`, `giro`, `marcha en el sitio`) en ángulos objetivo para 12+ motores de
-posición (cadera, rodilla, tobillo, cintura, hombros), usando fórmulas escritas a mano:
-amplitud de zancada, frecuencia, transferencia de peso lateral, y una fuerza de corrección
-aplicada directamente sobre el cuerpo de la pelvis (`data.xfrc_applied`) para intentar
-mantenerlo erguido. El detalle matemático completo está en [WALKING.md](../WALKING.md).
+The controller ([interactive_unitree.py](../interactive_unitree.py)) translates a
+high-level command (`advance`, `turn`, `march in place`) into target angles for 12+
+position motors (hip, knee, ankle, waist, shoulders), using hand-written formulas:
+stride amplitude, frequency, lateral weight transfer, and a correction force applied
+directly to the pelvis body (`data.xfrc_applied`) to try to keep it upright. The full
+mathematical detail is in [WALKING.md](../WALKING.md).
 
-Es el enfoque "clásico": nadie entrenó nada, un humano ajustó los números por prueba y
-error hasta que el robot caminara unos pasos sin caerse.
+It's the "classic" approach: nothing was trained, a human tuned the numbers by trial
+and error until the robot walked a few steps without falling.
 
-## Qué estamos mirando
+## What we're looking at
 
-- La ventana del visor de MuJoCo, con el robot G1 parado sobre el piso a cuadros.
-- Los mensajes que imprime el script en la terminal (`[viewer] avance=... giro=...`,
+- The MuJoCo viewer window, with the G1 robot standing on the checkered floor.
+- The messages the script prints in the terminal (`[viewer] avance=... giro=...`,
   `[viewer] caida detectada, reiniciando en stand`).
-- Opcionalmente, el panel nativo "Control" con un slider por motor (ver más abajo).
+- Optionally, the native "Control" panel with a slider per motor (see below).
 
-## Cómo lo miramos
+## How we look at it
 
-- **Visualmente**: la cámara sigue automáticamente a la pelvis (`mujoco.mjtCamera.mjCAMERA_TRACKING`),
-  así el robot no se sale de cuadro mientras camina o se cae.
-- **Por consola**: cada cambio de comando o caída se imprime como texto (`[viewer] ...`),
-  así se puede confirmar sin mirar la ventana si el robot se mantuvo de pie durante una
-  prueba larga.
-- **Motor por motor**: activando `--raw-mode`, el bucle de control deja de escribir sobre
-  los actuadores y el panel "Control" del visor pasa a mandar directamente sobre cada
-  motor de posición. Sirve para verificar, moviendo un slider a la vez, hacia qué lado
-  gira cada articulación — en vez de adivinarlo mirando una captura de pantalla.
+- **Visually**: the camera automatically follows the pelvis
+  (`mujoco.mjtCamera.mjCAMERA_TRACKING`), so the robot doesn't leave the frame while
+  walking or falling.
+- **Via console**: every command change or fall is printed as text (`[viewer] ...`), so
+  you can confirm without watching the window whether the robot stayed standing during
+  a long test.
+- **Motor by motor**: enabling `--raw-mode`, the control loop stops writing to the
+  actuators and the viewer's "Control" panel starts sending directly to each position
+  motor. It's useful to verify, moving one slider at a time, which way each joint turns
+  — instead of guessing by looking at a screenshot.
 
-## Cómo lo resolvemos
+## How we solve it
 
-- Cada articulación se controla con un actuador de **posición** (no de torque): el valor
-  que se manda es el ángulo objetivo, y MuJoCo aplica automáticamente la fuerza necesaria
-  para acercarse a ese ángulo.
-- Caminar se arma combinando, en fase, cadera + rodilla + tobillo de la pierna que
-  "vuela" y de la que "apoya", más una transferencia de peso lateral para que el pie que
-  se levanta no resbale.
-- Para no caerse, se suma una asistencia de balance: un torque correctivo (roll/pitch)
-  aplicado directo sobre la pelvis a partir de la orientación e giroscopio (IMU), y una
-  fuerza vertical proporcional al error de altura. Es, literalmente, una mano invisible
-  ayudando al robot — no es cómo se sostiene en pie un robot real.
+- Each joint is controlled by a **position** actuator (not torque): the value sent is
+  the target angle, and MuJoCo automatically applies the force needed to approach that
+  angle.
+- Walking is built by combining, in phase, hip + knee + ankle of the "swinging" leg and
+  the "stance" leg, plus a lateral weight transfer so the lifted foot doesn't slip.
+- To avoid falling, a balance assist is added: a corrective torque (roll/pitch) applied
+  directly to the pelvis based on orientation and gyroscope (IMU), and a vertical force
+  proportional to the height error. It is, literally, an invisible hand helping the
+  robot — it's not how a real robot stays standing.
 
-## Capturas reales
+## Real screenshots
 
-Estas imagenes salen de una corrida headless real (mismo codigo que usa el viewer,
-sin ventana) con `advance=0.5` sostenido y sin ninguna correccion humana en tiempo real:
+These images come from a real headless run (same code the viewer uses, without a
+window) with `advance=0.5` sustained and no human correction in real time:
 
-| Caminando (t=1.00s, altura pelvis 0.782m) | Cayendo (t=1.73s, altura pelvis 0.497m) |
+| Walking (t=1.00s, pelvis height 0.782m) | Falling (t=1.73s, pelvis height 0.497m) |
 |---|---|
-| ![Robot caminando con control heuristico](../artifacts/workshop/01_heuristico_caminando.png) | ![Robot cayendo con control heuristico](../artifacts/workshop/01_heuristico_caida.png) |
+| ![Robot walking with heuristic control](../artifacts/workshop/01_heuristico_caminando.png) | ![Robot falling with heuristic control](../artifacts/workshop/01_heuristico_caida.png) |
 
-En menos de 2 segundos sin que nadie ajuste giro o amplitud, el robot pierde el
-equilibrio hacia adelante y cae — la misma fragilidad que describe la sección
-anterior, pero mucho más rápido que lo que tarda un operador reaccionando en el
-teleop real.
+In under 2 seconds, with nobody adjusting turn or amplitude, the robot loses balance
+forward and falls — the same fragility described in the previous section, but much
+faster than it would take an operator reacting during real teleop.
 
-## Qué problemas encontramos
+## Problems we ran into
 
-- **El robot se cae con comandos sostenidos.** Con `advance=1.0` durante mucho tiempo,
-  eventualmente cae y el propio script lo detecta y reinicia (`caida detectada,
-  reiniciando en stand`). El control a mano nunca llegó a ser confiable en el largo plazo.
-- **Confusión de signos en la marcha.** Al subir la amplitud de flexión de cadera para que
-  el muslo subiera más, visualmente el muslo se iba **hacia atrás** (como una patada), no
-  hacia adelante. Cambiar el signo arregló la dirección pero hizo que el robot se cayera
-  repetidamente con esa magnitud — hubo que bajar la amplitud a un valor intermedio y
-  volver a probar.
-- **Notas contradictorias entre sesiones.** Una sesión anterior había concluido que
-  "positivo ya es hacia adelante" y que el problema era otro (la rodilla dominando sobre
-  la cadera). Confiar en una nota vieja sin volver a verificar casi generó un error
-  repetido — la lección: siempre reverificar el signo real con `--raw-mode` en vez de
-  asumir.
-- **Visores duplicados.** Cada prueba abría una ventana nueva sin cerrar la anterior,
-  generando confusión sobre cuál mirar. Se resolvió haciendo que `run_viewer.sh` mate
-  cualquier instancia previa (`pkill -f simulate_unitree.py`) antes de abrir una nueva.
-- **La cámara se quedaba fija** mientras el robot caminaba y se salía del cuadro. Se
-  resolvió activando la cámara de "tracking" nativa de MuJoCo, que sigue automáticamente
-  a la pelvis.
+- **The robot falls with sustained commands.** With `advance=1.0` for a long time, it
+  eventually falls and the script itself detects it and resets
+  (`caida detectada, reiniciando en stand`). Manual control never became reliable over
+  the long run.
+- **Sign confusion in the gait.** When increasing hip flexion amplitude so the thigh
+  would lift more, visually the thigh went **backward** (like a kick), not forward.
+  Flipping the sign fixed the direction but made the robot fall repeatedly at that
+  magnitude — the amplitude had to be lowered to an intermediate value and retested.
+- **Contradictory notes between sessions.** An earlier session had concluded that
+  "positive is already forward" and that the problem was something else (the knee
+  dominating over the hip). Trusting an old note without re-verifying almost caused a
+  repeated mistake — the lesson: always re-verify the real sign with `--raw-mode`
+  instead of assuming.
+- **Duplicate viewers.** Each test opened a new window without closing the previous
+  one, causing confusion about which one to watch. Fixed by having `run_viewer.sh` kill
+  any previous instance (`pkill -f simulate_unitree.py`) before opening a new one.
+- **The camera stayed fixed** while the robot walked and left the frame. Fixed by
+  enabling MuJoCo's native "tracking" camera, which automatically follows the pelvis.
 
-## Siguiente etapa
+## Next stage
 
-Con este enfoque, mantener el equilibrio depende 100% de fórmulas y fuerzas artificiales
-ajustadas a mano. La [Etapa 2](02-reinforcement-learning.md) prueba la misma tarea con una
-política entrenada, sin trucos externos.
+With this approach, keeping balance depends 100% on hand-tuned formulas and artificial
+forces. [Stage 2](02-reinforcement-learning.md) tries the same task with a trained
+policy, with no external tricks.

@@ -1,105 +1,107 @@
-# Instalación
+# Installation
 
-Esta guía cubre la instalación local del simulador y sus dependencias.
+*[Versión en español](INSTALL.es.md)*
 
-## Requisitos
+This guide covers local installation of the simulator and its dependencies.
 
-- macOS o Linux.
+## Requirements
+
+- macOS or Linux.
 - Python 3.
-- Un entorno virtual en `.venv`.
-- La carpeta `third_party/mujoco_menagerie` con los modelos Unitree.
-- Opcional: `ffmpeg` para exportar video desde la demo de grasp.
+- A virtual environment in `.venv`.
+- The `third_party/mujoco_menagerie` folder with the Unitree models.
+- Optional: `ffmpeg` to export video from the grasp demo.
 
-## Dependencias Python
+## Python dependencies
 
-Crear el entorno e instalar dependencias:
+Create the environment and install dependencies:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-Dependencias instaladas desde [requirements.txt](requirements.txt):
+Dependencies installed from [requirements.txt](requirements.txt):
 
 - `mujoco==3.2.7`
 - `glfw==2.10.0`
 - `numpy==2.5.1`
 - `PyOpenGL==3.1.10`
 
-## Modelos MuJoCo
+## MuJoCo models
 
-El launcher espera encontrar escenas Unitree en `third_party/mujoco_menagerie`.
+The launcher expects to find Unitree scenes in `third_party/mujoco_menagerie`.
 
-Rutas esperadas:
+Expected paths:
 
 - `third_party/mujoco_menagerie/unitree_h1/scene.xml`
 - `third_party/mujoco_menagerie/unitree_g1/scene.xml`
 - `third_party/mujoco_menagerie/unitree_g1/scene_with_hands.xml`
 
-Si esa carpeta no existe, el simulador falla al resolver el modelo.
+If that folder doesn't exist, the simulator fails to resolve the model.
 
-## Validación rápida
+## Quick validation
 
-Comprobar que MuJoCo carga el modelo sin abrir el viewer:
+Check that MuJoCo loads the model without opening the viewer:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/python simulate_unitree.py --robot g1-hands --mode headless --steps 300
 ```
 
-Si eso funciona, la instalación base está lista.
+If that works, the base installation is ready.
 
-## Viewer interactivo
+## Interactive viewer
 
-Para abrir el viewer usa `mjpython`, no `python`:
+To open the viewer use `mjpython`, not `python`:
 
 ```bash
-cd /ruta/al/repo/dafo-human
+cd /path/to/repo/dafo-human
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer
 ```
 
-Eso evita fallos observados al abrir el viewer de MuJoCo con el intérprete estándar.
+That avoids failures observed when opening the MuJoCo viewer with the standard interpreter.
 
-## Problemas comunes de instalación
+## Common installation issues
 
-### La escena no existe
+### The scene doesn't exist
 
-Síntoma:
+Symptom:
 
 ```text
 No encontre el modelo en ...
 ```
 
-Causa:
+Cause:
 
-- Falta `third_party/mujoco_menagerie`.
-- O la escena custom pasada con `--xml` no existe.
+- Missing `third_party/mujoco_menagerie`.
+- Or the custom scene passed with `--xml` doesn't exist.
 
-### El viewer no abre bien
+### The viewer doesn't open properly
 
-Usa:
+Use:
 
 ```bash
 .venv/bin/mjpython simulate_unitree.py --robot g1-hands --mode viewer
 ```
 
-No uses:
+Don't use:
 
 ```bash
 .venv/bin/python simulate_unitree.py --robot g1-hands --mode viewer
 ```
 
-### Puerto UDP ocupado
+### UDP port in use
 
-El viewer escucha por defecto en `127.0.0.1:47001`.
+The viewer listens by default on `127.0.0.1:47001`.
 
-Ver qué proceso lo está usando:
+See which process is using it:
 
 ```bash
 lsof -nP -iUDP:47001
 ```
 
-## Siguiente paso
+## Next step
 
-Después de instalar, sigue [RUNBOOK.md](RUNBOOK.md) para operar el simulador y [WALKING.md](WALKING.md) para el estado actual de la caminata.
+After installing, follow [RUNBOOK.md](RUNBOOK.md) to operate the simulator and [WALKING.md](WALKING.md) for the current state of walking.

@@ -1,72 +1,72 @@
-# Workshop: de control manual a caminar con Reinforcement Learning
+# Workshop: from manual control to walking with Reinforcement Learning
 
-## Objetivo del workshop
+*[Versión en español](WORKSHOP.es.md)*
 
-Lo que buscamos lograr, en una frase: que un robot humanoide bípedo (Unitree G1) se
-**mantenga parado** y, a partir de ahí, **camine hacia adelante sin caerse** — primero
-con un controlador escrito a mano y después con una política de Reinforcement Learning
-(RL) ya entrenada.
+## Workshop objective
 
-Al terminar este workshop, cada participante va a poder:
+What we're trying to achieve, in one sentence: get a bipedal humanoid robot (Unitree
+G1) to **stay standing** and, from there, **walk forward without falling** — first with
+a hand-written controller and then with an already-trained Reinforcement Learning (RL)
+policy.
 
-- Explicar por qué un robot bípedo de pie es inestable y qué hace falta para mantenerlo
-  erguido.
-- Ejecutar un controlador "a mano" (fórmulas fijas por motor) y ver en qué condiciones
-  se cae.
-- Ejecutar una política de RL ya entrenada y comparar, con números reales, cuánto mejor
-  sostiene el equilibrio que el controlador a mano frente a la misma tarea.
-- Agregar objetos al escenario y comprobar si el robot sigue de pie al chocar con algo
-  que el entrenamiento original no anticipó.
-- Repetir, paso a paso, las mismas pruebas que documentamos acá (con sus resultados
-  reales y capturas) para verificar por sí mismos lo que reportamos.
+By the end of this workshop, each participant will be able to:
 
-## El problema que resolvemos
+- Explain why a standing bipedal robot is unstable and what it takes to keep it upright.
+- Run a hand-written controller (fixed formulas per motor) and see under what
+  conditions it falls.
+- Run an already-trained RL policy and compare, with real numbers, how much better it
+  holds balance than the manual controller on the same task.
+- Add objects to the scene and check whether the robot stays standing when it hits
+  something the original training didn't anticipate.
+- Reproduce, step by step, the same tests documented here (with their real results and
+  screenshots) to verify for themselves what we report.
 
-Un robot humanoide de pie es una torre alta y angosta apoyada sobre dos pies chicos:
-cualquier pequeño error de ángulo en una pierna, o cualquier empujón, lo puede tirar.
-Mantenerlo de pie — y encima caminando — exige corregir el equilibrio constantemente,
-muchas veces por segundo. Hay dos formas de resolver esto que vamos a comparar en este
-workshop:
+## The problem we're solving
 
-1. **A mano**: un humano escribe fórmulas fijas (amplitud de zancada, flexión de
-   rodilla, fuerzas de corrección) y las ajusta por prueba y error. Funciona hasta
-   cierto punto, pero es frágil.
-2. **Con una política aprendida (RL)**: una red neuronal aprendió sola, en simulación y
-   por prueba y error, qué torque mandarle a cada motor para no caerse, sin que un
-   humano escriba las fórmulas a mano.
+A standing humanoid robot is a tall, narrow tower resting on two small feet: any small
+angle error in a leg, or any push, can knock it over. Keeping it standing — and on top
+of that walking — requires constantly correcting balance, many times per second. There
+are two ways to solve this that we're going to compare in this workshop:
 
-El detalle de qué es Reinforcement Learning y cómo funciona la política ya entrenada
-está en [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md); en este workshop nos
-enfocamos en la experiencia práctica de correr y comparar ambos enfoques.
+1. **By hand**: a human writes fixed formulas (stride amplitude, knee flexion,
+   correction forces) and tunes them by trial and error. It works up to a point, but
+   it's fragile.
+2. **With a learned policy (RL)**: a neural network learned on its own, in simulation
+   and by trial and error, what torque to send to each motor to avoid falling, without
+   a human writing the formulas by hand.
 
-## Requisito previo
+The detail of what Reinforcement Learning is and how the already-trained policy works
+is in [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md); in this workshop we focus
+on the practical experience of running and comparing both approaches.
 
-Seguir [INSTALL.md](INSTALL.md) para tener el entorno (`.venv`) y
-`third_party/mujoco_menagerie` instalados.
+## Prerequisite
 
-## Las 3 etapas
+Follow [INSTALL.md](INSTALL.md) to have the environment (`.venv`) and
+`third_party/mujoco_menagerie` installed.
 
-Cada etapa tiene su propia página con: el objetivo puntual de esa etapa, cómo
-ejecutarla, en qué consiste, qué mirar, cómo se resuelve el problema, las capturas
-reales de las pruebas que hicimos, y qué problemas encontramos armándola — para que
-puedas repetir cada prueba paso a paso y comprobar si te da el mismo resultado.
+## The 3 stages
 
-1. **[Control heurístico](workshop/01-control-heuristico.md)** — objetivo: hacer
-   caminar al robot con fórmulas a mano por motor + control remoto, y encontrar en qué
-   punto se cae.
-2. **[Reinforcement Learning](workshop/02-reinforcement-learning.md)** — objetivo:
-   la misma tarea (caminar sin caerse), reemplazando las fórmulas a mano por una
-   política ya entrenada.
-3. **[Objetos en el escenario](workshop/03-objetos-en-el-escenario.md)** — objetivo:
-   comprobar si la política de RL sigue de pie cuando además tiene que lidiar con
-   cajas y un estante en el camino.
+Each stage has its own page with: the specific objective of that stage, how to run it,
+what it consists of, what to look at, how the problem is solved, the real screenshots
+from the tests we ran, and what problems we ran into building it — so you can reproduce
+each test step by step and check whether you get the same result.
 
-## Resumen rápido: qué ejecutar en cada etapa
+1. **[Heuristic control](workshop/01-control-heuristico.md)** — objective: make the
+   robot walk with hand-written formulas per motor + remote control, and find the point
+   where it falls.
+2. **[Reinforcement Learning](workshop/02-reinforcement-learning.md)** — objective: the
+   same task (walking without falling), replacing hand-written formulas with an
+   already-trained policy.
+3. **[Objects in the scene](workshop/03-objetos-en-el-escenario.md)** — objective: check
+   whether the RL policy stays standing when it also has to deal with boxes and a shelf
+   in its path.
 
-Si solo querés los comandos para probar ya mismo, son estos (el detalle de cada uno está
-en la página de su etapa).
+## Quick summary: what to run in each stage
 
-**Etapa 1 — heurístico:**
+If you just want the commands to try right now, here they are (the detail of each is
+on that stage's page).
+
+**Stage 1 — heuristic:**
 ```bash
 ./run_viewer.sh
 ```
@@ -74,16 +74,16 @@ en la página de su etapa).
 .venv/bin/python send_unitree_command.py --advance 0.5
 ```
 
-**Etapa 2 — RL:**
+**Stage 2 — RL:**
 ```bash
 ./run_viewer_rl.sh
 ```
 ```bash
 .venv/bin/python send_unitree_command.py --advance 0.6
 ```
-(o directamente `W/A/S/D` en la ventana del visor, sin necesitar la segunda terminal)
+(or directly `W/A/S/D` in the viewer window, no need for the second terminal)
 
-**Etapa 3 — RL + objetos:**
+**Stage 3 — RL + objects:**
 ```bash
 .venv/bin/mjpython simulate_g1_rl.py --scene third_party/unitree_rl_gym/resources/robots/g1_description/g1_warehouse_scene.xml
 ```
@@ -91,8 +91,8 @@ en la página de su etapa).
 .venv/bin/python send_unitree_command.py --advance 0.6
 ```
 
-## Para seguir profundizando
+## To keep digging deeper
 
-- [WALKING.md](WALKING.md): detalle técnico del controlador heurístico de la etapa 1.
-- [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): cómo funciona por dentro la política de la etapa 2 (qué es RL, cuántos motores, cuántos valores de observación, qué significan los paneles del visor).
-- [RUNBOOK.md](RUNBOOK.md): operación diaria del simulador en general.
+- [WALKING.md](WALKING.md): technical detail of the heuristic controller from stage 1.
+- [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): how the stage 2 policy works internally (what RL is, how many motors, how many observation values, what the viewer panels mean).
+- [RUNBOOK.md](RUNBOOK.md): day-to-day operation of the simulator in general.
