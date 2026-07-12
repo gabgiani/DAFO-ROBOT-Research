@@ -1,0 +1,48 @@
+<mujoco model="g1_warehouse_scene">
+  <include file="g1_12dof.xml"/>
+
+  <statistic center="1.0 0.7 1.0" extent="0.8"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0.9 0.9 0.9"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="-140" elevation="-20"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="flat" rgb1="0 0 0" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <material name="box_a" rgba="0.83 0.29 0.21 1"/>
+    <material name="box_b" rgba="0.21 0.45 0.83 1"/>
+    <material name="shelf_frame" rgba="0.22 0.22 0.24 1"/>
+    <material name="shelf_plank" rgba="0.55 0.41 0.29 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="1 0 3.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- Dos cajas sueltas en el piso, delante del punto de partida del robot (+x). -->
+    <body name="box_a" pos="2.2 0.35 0.10">
+      <freejoint/>
+      <geom name="box_a_geom" type="box" size="0.10 0.10 0.10" material="box_a" mass="0.5"/>
+    </body>
+
+    <body name="box_b" pos="2.8 -0.35 0.10">
+      <freejoint/>
+      <geom name="box_b_geom" type="box" size="0.10 0.10 0.10" material="box_b" mass="0.5"/>
+    </body>
+
+    <!-- Estante fijo mas adelante, con dos niveles, para caminar hacia el. -->
+    <body name="shelf" pos="4.5 0 0">
+      <geom type="box" pos="-0.25 0.35 0.45" size="0.02 0.02 0.45" material="shelf_frame"/>
+      <geom type="box" pos="0.25 0.35 0.45" size="0.02 0.02 0.45" material="shelf_frame"/>
+      <geom type="box" pos="-0.25 -0.35 0.45" size="0.02 0.02 0.45" material="shelf_frame"/>
+      <geom type="box" pos="0.25 -0.35 0.45" size="0.02 0.02 0.45" material="shelf_frame"/>
+      <geom name="shelf_plank_low" type="box" pos="0 0 0.45" size="0.28 0.38 0.015" material="shelf_plank"/>
+      <geom name="shelf_plank_high" type="box" pos="0 0 0.85" size="0.28 0.38 0.015" material="shelf_plank"/>
+    </body>
+  </worldbody>
+</mujoco>

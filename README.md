@@ -7,6 +7,8 @@ Base mínima para instalar, ejecutar y entender cómo se usa este simulador de M
 - [INSTALL.md](INSTALL.md): instalación local y validación base.
 - [RUNBOOK.md](RUNBOOK.md): operación diaria del simulador, viewer, teleop y demo.
 - [WALKING.md](WALKING.md): estado actual del controlador de caminata y cómo probarlo.
+- [WORKSHOP.md](WORKSHOP.md): recorrido paso a paso — control a mano vs. Reinforcement Learning vs. objetos en el escenario.
+- [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): cómo funciona por dentro la política de RL que mantiene al robot parado.
 
 ## Qué hay en este repositorio
 
