@@ -10,6 +10,38 @@ choque con algo.
 Requisito previo: seguir [INSTALL.md](INSTALL.md) para tener el entorno (`.venv`) y
 `third_party/mujoco_menagerie` instalados.
 
+## Resumen rápido: qué ejecutar en cada etapa
+
+Si solo querés los comandos para probar ya mismo (sin leer las explicaciones), son estos.
+Cada bloque va en su propia terminal, siempre parado en la carpeta del repo.
+
+**Etapa 1 — heurístico:**
+```bash
+./run_viewer.sh
+```
+```bash
+.venv/bin/python send_unitree_command.py --advance 0.5
+```
+
+**Etapa 2 — RL:**
+```bash
+./run_viewer_rl.sh
+```
+```bash
+.venv/bin/python send_unitree_command.py --advance 0.6
+```
+(o directamente `W/A/S/D` en la ventana del visor, sin necesitar la segunda terminal)
+
+**Etapa 3 — RL + objetos:**
+```bash
+.venv/bin/mjpython simulate_g1_rl.py --scene third_party/unitree_rl_gym/resources/robots/g1_description/g1_warehouse_scene.xml
+```
+```bash
+.venv/bin/python send_unitree_command.py --advance 0.6
+```
+
+El resto de este documento explica cada etapa con más detalle y qué esperar ver.
+
 ## Etapa 1 — Control heurístico (a mano), motor por motor
 
 **Objetivo de esta etapa:** entender que controlar un humanoide "motor por motor" con
