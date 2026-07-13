@@ -44,7 +44,7 @@ on the practical experience of running and comparing both approaches.
 Follow [INSTALL.md](INSTALL.md) to have the environment (`.venv`) and
 `third_party/mujoco_menagerie` installed.
 
-## The 3 stages
+## The 4 stages
 
 Each stage has its own page with: the specific objective of that stage, how to run it,
 what it consists of, what to look at, how the problem is solved, the real screenshots
@@ -60,6 +60,9 @@ each test step by step and check whether you get the same result.
 3. **[Objects in the scene](workshop/03-objetos-en-el-escenario.md)** — objective: check
    whether the RL policy stays standing when it also has to deal with boxes and a shelf
    in its path.
+4. **[SONIC whole-body control](workshop/04-control-cuerpo-completo-sonic.md)** —
+  objective: walk physically with a 29-DOF policy and coordinate a carrying posture
+  or natural arm swing from a safe graphical remote.
 
 ## Quick summary: what to run in each stage
 
@@ -91,8 +94,23 @@ on that stage's page).
 .venv/bin/python send_unitree_command.py --advance 0.6
 ```
 
+**Stage 4 — whole-body SONIC:**
+```bash
+# On Linux, after installing GR00T-WholeBodyControl and SONIC checkpoints:
+.venv_sim/bin/python gear_sonic/scripts/run_sim_loop.py --interface sim
+```
+```bash
+# From this repository, local or remote graphical control:
+./run_sonic_teleop.sh --bind tcp://127.0.0.1:5556
+```
+
+Stage 4 has additional prerequisites, four coordinated processes, and an upstream
+patch; follow its complete page before running these commands.
+
 ## To keep digging deeper
 
 - [WALKING.md](WALKING.md): technical detail of the heuristic controller from stage 1.
 - [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): how the stage 2 policy works internally (what RL is, how many motors, how many observation values, what the viewer panels mean).
 - [RUNBOOK.md](RUNBOOK.md): day-to-day operation of the simulator in general.
+- [FULL_BODY_INTEGRATION.md](FULL_BODY_INTEGRATION.md): why the earlier attempt to mix a
+  leg policy with upper-body PD control was not physically stable.

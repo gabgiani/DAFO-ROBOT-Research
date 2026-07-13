@@ -46,7 +46,7 @@ enfocamos en la experiencia práctica de correr y comparar ambos enfoques.
 Seguir [INSTALL.es.md](INSTALL.es.md) para tener el entorno (`.venv`) y
 `third_party/mujoco_menagerie` instalados.
 
-## Las 3 etapas
+## Las 4 etapas
 
 Cada etapa tiene su propia página con: el objetivo puntual de esa etapa, cómo
 ejecutarla, en qué consiste, qué mirar, cómo se resuelve el problema, las capturas
@@ -62,6 +62,9 @@ puedas repetir cada prueba paso a paso y comprobar si te da el mismo resultado.
 3. **[Objetos en el escenario](workshop/03-objetos-en-el-escenario.es.md)** — objetivo:
    comprobar si la política de RL sigue de pie cuando además tiene que lidiar con
    cajas y un estante en el camino.
+4. **[Control de cuerpo completo con SONIC](workshop/04-control-cuerpo-completo-sonic.es.md)** —
+  objetivo: caminar físicamente con una policy de 29 DOF y coordinar postura de carga
+  o balanceo natural de brazos desde un telecomando gráfico seguro.
 
 ## Resumen rápido: qué ejecutar en cada etapa
 
@@ -93,8 +96,23 @@ en la página de su etapa).
 .venv/bin/python send_unitree_command.py --advance 0.6
 ```
 
+**Etapa 4 — SONIC de cuerpo completo:**
+```bash
+# En Linux, después de instalar GR00T-WholeBodyControl y los checkpoints SONIC:
+.venv_sim/bin/python gear_sonic/scripts/run_sim_loop.py --interface sim
+```
+```bash
+# Desde este repo, telecomando local o remoto:
+./run_sonic_teleop.sh --bind tcp://127.0.0.1:5556
+```
+
+La Etapa 4 tiene prerrequisitos adicionales, cuatro procesos coordinados y un patch
+upstream; seguir su página completa antes de ejecutar estos comandos.
+
 ## Para seguir profundizando
 
 - [WALKING.es.md](WALKING.es.md): detalle técnico del controlador heurístico de la etapa 1.
 - [REINFORCEMENT_LEARNING.es.md](REINFORCEMENT_LEARNING.es.md): cómo funciona por dentro la política de la etapa 2 (qué es RL, cuántos motores, cuántos valores de observación, qué significan los paneles del visor).
 - [RUNBOOK.es.md](RUNBOOK.es.md): operación diaria del simulador en general.
+- [FULL_BODY_INTEGRATION.es.md](FULL_BODY_INTEGRATION.es.md): por qué el intento anterior
+  de mezclar una policy de piernas con control PD de brazos no fue físicamente estable.

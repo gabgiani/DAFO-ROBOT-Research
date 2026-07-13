@@ -1,0 +1,14 @@
+diff --git a/gear_sonic/utils/mujoco_sim/base_sim.py b/gear_sonic/utils/mujoco_sim/base_sim.py
+--- a/gear_sonic/utils/mujoco_sim/base_sim.py
++++ b/gear_sonic/utils/mujoco_sim/base_sim.py
+@@ -184,2 +184,3 @@ class DefaultEnv:
+         # Enable the elastic band
++        self.elastic_band = None
+         if self.config["ENABLE_ELASTIC_BAND"] and self.use_floating_root_link:
+diff --git a/gear_sonic/utils/mujoco_sim/wbc_configs/g1_29dof_sonic_model12.yaml b/gear_sonic/utils/mujoco_sim/wbc_configs/g1_29dof_sonic_model12.yaml
+--- a/gear_sonic/utils/mujoco_sim/wbc_configs/g1_29dof_sonic_model12.yaml
++++ b/gear_sonic/utils/mujoco_sim/wbc_configs/g1_29dof_sonic_model12.yaml
+@@ -19,2 +19,2 @@
+ PRINT_SCENE_INFORMATION: True # Print link, joint and sensors information of robot
+-ENABLE_ELASTIC_BAND: True # Virtual spring band, used for lifting h1
++ENABLE_ELASTIC_BAND: False # Virtual spring band, used for lifting h1

@@ -14,13 +14,16 @@ Unitree robots that the rest of this work builds on.
 - [INSTALL.md](INSTALL.md): local installation and baseline validation.
 - [RUNBOOK.md](RUNBOOK.md): day-to-day operation of the simulator, viewer, teleop, and demo.
 - [WALKING.md](WALKING.md): current state of the walking controller and how to test it.
-- [WORKSHOP.md](WORKSHOP.md): step-by-step walkthrough — manual control vs. Reinforcement Learning vs. objects in the scene.
+- [WORKSHOP.md](WORKSHOP.md): step-by-step walkthrough — manual control, RL, objects, and SONIC whole-body control.
+- [workshop/04-control-cuerpo-completo-sonic.md](workshop/04-control-cuerpo-completo-sonic.md): complete installation and operation of 29-DOF G1 locomotion and arm modes.
 - [REINFORCEMENT_LEARNING.md](REINFORCEMENT_LEARNING.md): how the RL policy that keeps the robot standing works internally.
-- [FULL_BODY_INTEGRATION.md](FULL_BODY_INTEGRATION.md): what happened when combining the RL legs with the full arms/hands model, and how to actually fix it (retraining).
+- [FULL_BODY_INTEGRATION.md](FULL_BODY_INTEGRATION.md): record of the earlier unstable attempt to combine a 12-DOF policy with arm control; Stage 4 documents the working SONIC solution.
 
 ## What's in this repository
 
-This project is oriented toward local execution. Today it does not include a remote deployment pipeline, containers, or infrastructure scripts. The real flow is:
+Stages 1 through 3 are oriented toward local execution. Stage 4 adds SSH-based remote
+operation of an external NVIDIA GR00T Whole-Body Control installation; it does not
+deploy infrastructure or redistribute its checkpoints. The baseline local flow is:
 
 1. Install Python dependencies.
 2. Have `third_party/mujoco_menagerie` available.

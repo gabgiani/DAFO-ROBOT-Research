@@ -14,13 +14,16 @@ MuJoCo con robots Unitree sobre el que se apoya el resto de este trabajo.
 - [INSTALL.es.md](INSTALL.es.md): instalación local y validación base.
 - [RUNBOOK.es.md](RUNBOOK.es.md): operación diaria del simulador, viewer, teleop y demo.
 - [WALKING.es.md](WALKING.es.md): estado actual del controlador de caminata y cómo probarlo.
-- [WORKSHOP.es.md](WORKSHOP.es.md): recorrido paso a paso — control a mano vs. Reinforcement Learning vs. objetos en el escenario.
+- [WORKSHOP.es.md](WORKSHOP.es.md): recorrido paso a paso — control a mano, RL, objetos y cuerpo completo con SONIC.
+- [workshop/04-control-cuerpo-completo-sonic.es.md](workshop/04-control-cuerpo-completo-sonic.es.md): instalación y operación completa del G1 de 29 DOF con locomoción y modos de brazos.
 - [REINFORCEMENT_LEARNING.es.md](REINFORCEMENT_LEARNING.es.md): cómo funciona por dentro la política de RL que mantiene al robot parado.
-- [FULL_BODY_INTEGRATION.es.md](FULL_BODY_INTEGRATION.es.md): qué pasó al combinar las piernas RL con el modelo completo de brazos/manos, y cómo arreglarlo de verdad (reentrenar).
+- [FULL_BODY_INTEGRATION.es.md](FULL_BODY_INTEGRATION.es.md): registro del intento anterior no estable al combinar una policy 12-DOF con control de brazos; la Etapa 4 documenta la solución SONIC funcional.
 
 ## Qué hay en este repositorio
 
-Este proyecto está orientado a ejecución local. Hoy no incluye un pipeline de despliegue remoto, contenedores ni scripts de infraestructura. El flujo real es:
+Las etapas 1 a 3 están orientadas a ejecución local. La Etapa 4 agrega operación remota
+por SSH de una instalación externa de NVIDIA GR00T Whole-Body Control; no despliega
+infraestructura ni redistribuye sus checkpoints. El flujo base local es:
 
 1. Instalar dependencias Python.
 2. Tener disponible `third_party/mujoco_menagerie`.
