@@ -1,8 +1,13 @@
-# dafo-human
+# DAFO-ROBOT Research
 
 *[Versión en español](README.es.md)*
 
-Minimal base to install, run, and understand how this MuJoCo simulator for Unitree robots is used.
+This repository is where we start applying Physical AI: teaching a humanoid robot to carry out
+tasks that we have already taught human operators through the DAFO Guidance System, using that
+accumulated operational knowledge as a foundation for embodied AI.
+
+As a first step, this is a minimal base to install, run, and understand the MuJoCo simulator for
+Unitree robots that the rest of this work builds on.
 
 ## Documentation map
 
